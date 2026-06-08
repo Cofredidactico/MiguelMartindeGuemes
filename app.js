@@ -4,7 +4,7 @@
    ===================================================================== */
 
 /* ---------- Estado global ---------- */
-const App = { ciclo:'pc', estrellas:0, lecturaOn:false, enHistoria:false, histPaso:0, musicaOn:false };
+const App = { ciclo:'pc', estrellas:0, lecturaOn:false, enHistoria:false, histPaso:0, musicaOn:false, letra:'normal' };
 
 /* ---------- Utilidades ---------- */
 const $ = (s,c=document)=>c.querySelector(s);
@@ -25,6 +25,19 @@ function ir(vista){
 function toggleClase(clase,btnId){
   const on = document.body.classList.toggle(clase);
   const b = $('#'+btnId); b.classList.toggle('activo',on); b.setAttribute('aria-pressed',on);
+}
+function toggleLetra(){
+  const orden=['normal','mayus','minus'];
+  App.letra = orden[(orden.indexOf(App.letra)+1)%3];
+  document.body.classList.remove('txt-mayus','txt-minus');
+  let ic='Aa', lbl='Letra', say='Letra normal';
+  if(App.letra==='mayus'){ document.body.classList.add('txt-mayus'); ic='AA'; lbl='MAYÚS'; say='Imprenta mayúscula'; }
+  else if(App.letra==='minus'){ document.body.classList.add('txt-minus'); ic='aa'; lbl='minús'; say='Imprenta minúscula'; }
+  const ei=$('#b-letra-ic'), el=$('#b-letra-lbl'), b=$('#b-letra');
+  if(ei) ei.textContent=ic;
+  if(el) el.textContent=lbl;
+  if(b){ b.classList.toggle('activo',App.letra!=='normal'); b.setAttribute('aria-pressed',App.letra!=='normal'); }
+  sonClick(); decir(say);
 }
 function toggleLectura(){
   App.lecturaOn = !App.lecturaOn;
@@ -494,8 +507,9 @@ function puntosProgreso(activo){
 function renderCapitulo(i){
   App.histPaso=i;
   const cap=CAPITULOS[i];
-  const fig = cap.guia==='macacha' ? svgMacacha() : svgGaucho();
+  const img = cap.guia==='macacha' ? 'macacha.png' : 'guemes-portada.png';
   const nombre = cap.guia==='macacha' ? 'Macacha' : 'Güemes';
+  const fig = `<div class="guia-foto-marco"><img class="guia-foto" src="${img}" alt="Retrato de ${nombre}"></div>`;
   $('#vista-historia').innerHTML = `
   <div class="wrap">
     <div class="hist-barra">
@@ -558,8 +572,8 @@ function renderFinalHistoria(){
         Recorriste toda la vida de <strong>Martín Miguel de Güemes</strong>, desde que nació en Salta hasta su paso a la inmortalidad el 17 de junio. ¡Sos un verdadero gaucho o gaucha de la libertad! 🇦🇷
       </p>
       <div class="escena-fila" style="justify-content:center">
-        <div class="guia-fig guia-guemes">${svgGaucho()}<span class="guia-nombre">Güemes</span></div>
-        <div class="guia-fig guia-macacha">${svgMacacha()}<span class="guia-nombre">Macacha</span></div>
+        <div class="guia-fig guia-guemes"><div class="guia-foto-marco"><img class="guia-foto" src="guemes-portada.png" alt="Retrato de Güemes"></div><span class="guia-nombre">Güemes</span></div>
+        <div class="guia-fig guia-macacha"><div class="guia-foto-marco"><img class="guia-foto" src="macacha.png" alt="Retrato de Macacha"></div><span class="guia-nombre">Macacha</span></div>
       </div>
       ${btnLeer('¡Completaste la aventura de Güemes! Sos un verdadero gaucho o gaucha de la libertad.')}
       <div style="margin-top:14px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center">

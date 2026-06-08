@@ -481,6 +481,18 @@ body.contraste .hist-barra .hist-info{background:#000;color:var(--sol);border:2p
 .pie-marca .pie-logo{width:120px;height:auto;background:rgba(255,255,255,.96);border-radius:16px;padding:6px}
 .pie-marca span{font-weight:700;max-width:360px;text-align:left}
 body.contraste .pie-marca .pie-logo{background:#fff}
+/* ===== Imprenta mayúscula / minúscula (toda la plataforma) ===== */
+body.txt-mayus, body.txt-mayus input, body.txt-mayus textarea{text-transform:uppercase}
+body.txt-minus, body.txt-minus input, body.txt-minus textarea{text-transform:lowercase}
+#b-letra .ic{font-family:var(--fuente-tit);font-weight:700;font-size:1.15rem;text-transform:none!important}
+
+/* ===== Guías del Modo Historia (retratos enmarcados) ===== */
+.guia-foto-marco{width:122px;aspect-ratio:3/4;border-radius:16px;overflow:hidden;margin:0 auto;
+  border:4px solid var(--sol);box-shadow:0 8px 16px rgba(0,0,0,.3);
+  background:radial-gradient(120% 95% at 50% 18%,#27313f,#06080c);animation:flota 4s ease-in-out infinite}
+.guia-foto{width:100%;height:100%;object-fit:cover;object-position:50% 6%;display:block}
+body.calmo .guia-foto-marco{animation:none}
+@media(max-width:560px){.guia-foto-marco{width:98px}}
 </style>
 </head>
 <body>
@@ -497,6 +509,7 @@ body.contraste .pie-marca .pie-logo{background:#fff}
   <button class="btn-acc" id="b-contraste" onclick="toggleClase('contraste','b-contraste')" aria-pressed="false" title="Alto contraste"><span class="ic">◐</span><span class="lbl">Alto contraste</span></button>
   <button class="btn-acc" id="b-calmo" onclick="toggleClase('calmo','b-calmo')" aria-pressed="false" title="Reducir movimiento"><span class="ic">🐢</span><span class="lbl">Modo calmo</span></button>
   <button class="btn-acc" id="b-musica" onclick="toggleMusica()" aria-pressed="false" title="Música ambiente"><span class="ic">🎵</span><span class="lbl">Música</span></button>
+  <button class="btn-acc" id="b-letra" onclick="toggleLetra()" aria-pressed="false" title="Tipo de letra: normal, MAYÚSCULA o minúscula"><span class="ic" id="b-letra-ic">Aa</span><span class="lbl" id="b-letra-lbl">Letra</span></button>
 </header>
 
 <main id="main">
