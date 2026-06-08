@@ -3,6 +3,14 @@
    ===================================================================== */
 const JUEGOS = {};
 
+/* Fotos de referencia reales para ciertos conceptos.
+   vis(em) devuelve la foto si el emoji tiene una, o el emoji en otro caso. */
+const FOTO_REF = { '🐴':'caballo.png', '🐎':'caballo.png', '🧣':'poncho.png', '🏔️':'salta.png' };
+function vis(em){
+  const f = FOTO_REF[em];
+  return f ? `<img src="${f}" class="foto-ref" alt="">` : em;
+}
+
 /* helper marco de juego */
 function marco(zona, titulo, consigna, cuerpo){
   zona.innerHTML = `<div class="juego">
@@ -161,7 +169,7 @@ JUEGOS.anagrama = z => {
     cont.innerHTML=`
       <div class="chip" style="margin:0 auto 8px;width:max-content">Palabra ${idx+1} de ${palabras.length}</div>
       <div class="anagrama-zona">
-        <div class="pista-img">${em}</div>
+        <div class="pista-img">${vis(em)}</div>
         <div class="casillas" id="cas">${p.split('').map((_,i)=>`<div class="casilla" data-i="${i}" onclick="window._quitar(${i})"></div>`).join('')}</div>
         <div class="letras-disp" id="disp">${letras.map((l,i)=>`<div class="ficha" data-l="${l}" data-id="${i}" onclick="window._poner(this,'${l}')">${l}</div>`).join('')}</div>
         <div class="feedback" id="fb"></div>
@@ -213,7 +221,7 @@ function juegoUnir(zona,titulo,pares,finalMsg){
   let sel=null, hechos=0;
   const c=marco(zona,titulo,'Tocá una imagen y luego su palabra para unirlas. 🔗',
     `<div class="tablero-unir">
-      <div class="col-unir">${izq.map(p=>`<button class="item-unir imagen" data-k="${p.k}" data-leer="imagen">${p.em}</button>`).join('')}</div>
+      <div class="col-unir">${izq.map(p=>`<button class="item-unir imagen" data-k="${p.k}" data-leer="imagen">${vis(p.em)}</button>`).join('')}</div>
       <div class="col-unir">${der.map(p=>`<button class="item-unir palabra" data-k="${p.k}" data-leer="${p.w}">${p.w}</button>`).join('')}</div>
     </div><div class="feedback" id="fb"></div>`);
   $$('.item-unir',c).forEach(b=>b.onclick=()=>{
@@ -256,7 +264,7 @@ function juegoOrdenar(zona, titulo, consigna, eventos, finalMsg, mostrarAnio){
     lista.innerHTML = orden.map((e,i)=>`
       <div class="evento" data-pos="${i}">
         <div class="num">${i+1}</div>
-        <span class="em">${e.em}</span>
+        <span class="em">${vis(e.em)}</span>
         <div>${mostrarAnio?`<strong>${e.a}</strong> · `:''}${e.t}</div>
         <div class="flechas">
           <button onclick="window._mover(${i},-1)" aria-label="Subir">▲</button>
@@ -522,7 +530,7 @@ JUEGOS.cuadro = z => {
   };
   const todas=[]; Object.entries(personajes).forEach(([k,v])=>v.piezas.forEach(p=>todas.push({k,p})));
   const cols=Object.entries(personajes).map(([k,v])=>`
-    <div class="ch-col"><h4>${v.em} ${k}</h4>
+    <div class="ch-col"><h4>${vis(v.em)} ${k}</h4>
       <div class="ch-drop" data-k="${k}" data-leer="${k}"></div></div>`).join('');
   const c=marco(z,'📊 Cuadro histórico','Arrastrá (o tocá) cada acción y soltala en el personaje correcto.',
     `<div class="cuadro-hist">${cols}</div>
@@ -558,7 +566,7 @@ JUEGOS.instagram = z => {
       <div class="ig-form">
         <label>📸 Elegí la foto:</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap" id="igimgs">
-          ${Object.keys(imgs).map((e,i)=>`<button class="swatch" style="font-size:1.8rem;background:#fff;width:54px;height:54px;${i===0?'outline:5px solid var(--celeste-oscuro)':''}" data-em="${e}">${e}</button>`).join('')}
+          ${Object.keys(imgs).map((e,i)=>`<button class="swatch" style="font-size:1.8rem;background:#fff;width:54px;height:54px;${i===0?'outline:5px solid var(--celeste-oscuro)':''}" data-em="${e}">${vis(e)}</button>`).join('')}
         </div>
         <label>✍️ Escribí el texto del posteo:</label>
         <textarea id="cap" placeholder="Ej: ¡Hoy defendimos el norte junto a mis gauchos! 🐴🔥 #GuerraGaucha #Salta"></textarea>
@@ -572,7 +580,7 @@ JUEGOS.instagram = z => {
             <div class="ig-avatar"><svg viewBox="0 0 40 40" width="42" height="42"><circle cx="20" cy="15" r="8" fill="#8B5E3C"/><path d="M8 38a12 12 0 0 1 24 0z" fill="#C0392B"/></svg></div>
             <div class="ig-user">general.guemes <small>Salta, Provincias Unidas · 1815</small></div>
           </div>
-          <div class="ig-img" id="igimg">🐴</div>
+          <div class="ig-img" id="igimg">${vis('🐴')}</div>
           <div class="ig-actions">❤️ 💬 ✈️</div>
           <div class="ig-likes" id="iglikes">Les gusta a macacha.guemes y 1.785 personas más</div>
           <div class="ig-caption" id="igcap"><b>general.guemes</b> Escribí tu posteo arriba ✍️</div>
@@ -584,12 +592,12 @@ JUEGOS.instagram = z => {
       </div>
     </div>`);
   let em='🐴';
-  $$('#igimgs .swatch',c).forEach(b=>b.onclick=()=>{ $$('#igimgs .swatch',c).forEach(x=>x.style.outline=''); b.style.outline='5px solid var(--celeste-oscuro)'; em=b.dataset.em; $('#igimg',c).textContent=em; sonClick(); });
+  $$('#igimgs .swatch',c).forEach(b=>b.onclick=()=>{ $$('#igimgs .swatch',c).forEach(x=>x.style.outline=''); b.style.outline='5px solid var(--celeste-oscuro)'; em=b.dataset.em; $('#igimg',c).innerHTML=vis(em); sonClick(); });
   $('#pub',c).onclick=()=>{
     const cap=$('#cap',c).value.trim()||'¡Defendiendo el Norte argentino!';
     const tags=$('#tags',c).value.trim();
     $('#igcap',c).innerHTML=`<b>general.guemes</b> ${cap} ${tags?`<span style="color:#2E6FA6">${tags}</span>`:''}`;
-    $('#igimg',c).textContent=em;
+    $('#igimg',c).innerHTML=vis(em);
     sonBien(); confeti(60); sumarEstrella();
     $('#iglikes',c).textContent='Les gusta a macacha.guemes y 18.210 personas más';
     if(App.lecturaOn) decir('Publicación creada. '+cap);
@@ -618,7 +626,7 @@ JUEGOS.mirar = z => {
     const p=pasos[i];
     $('#paso',c).innerHTML=`
       <div style="text-align:center">
-        <div style="font-size:7rem;margin:10px">${p.em}</div>
+        <div style="font-size:7rem;margin:10px">${vis(p.em)}</div>
         <div class="pregunta-card" data-leer="${p.t}">${p.t}</div>
         <div style="margin-top:18px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
           ${i>0?`<button class="btn-grande azul" id="ant">⬅️ Atrás</button>`:''}
@@ -647,7 +655,7 @@ JUEGOS.vf_facil = z => {
     if(i>=preguntas.length) return medallaFinal(z,'¡Muy bien! Respondiste todo. 💚');
     const p=preguntas[i];
     $('#q',c).innerHTML=`
-      <div style="text-align:center"><div style="font-size:6rem">${p.em}</div>
+      <div style="text-align:center"><div style="font-size:6rem">${vis(p.em)}</div>
       <div class="pregunta-card" data-leer="${p.t}">${p.t}</div>
       <div class="opciones-vf" style="max-width:480px">
         <button class="btn-vf v" onclick="window._sn(true,this)"><span class="em">✅</span>SÍ</button>
