@@ -1,0 +1,373 @@
+/* =====================================================================
+   ¡A LAS CARGAS, GÜEMES!  ·  Plataforma educativa interactiva
+   Núcleo: router, accesibilidad, sonidos, confeti, datos y menús.
+   ===================================================================== */
+
+/* ---------- Estado global ---------- */
+const App = { ciclo:'pc', estrellas:0, lecturaOn:false };
+
+/* ---------- Utilidades ---------- */
+const $ = (s,c=document)=>c.querySelector(s);
+const $$ = (s,c=document)=>[...c.querySelectorAll(s)];
+const baraja = a => a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(v=>v[1]);
+
+/* ---------- Router ---------- */
+function ir(vista){
+  $$('.vista').forEach(v=>v.classList.remove('activa'));
+  $('#vista-'+vista).classList.add('activa');
+  window.scrollTo({top:0,behavior:'instant'});
+  cancelarVoz();
+}
+
+/* =====================================================================
+   ACCESIBILIDAD
+   ===================================================================== */
+function toggleClase(clase,btnId){
+  const on = document.body.classList.toggle(clase);
+  const b = $('#'+btnId); b.classList.toggle('activo',on); b.setAttribute('aria-pressed',on);
+}
+function toggleLectura(){
+  App.lecturaOn = !App.lecturaOn;
+  const b=$('#b-leer'); b.classList.toggle('activo',App.lecturaOn); b.setAttribute('aria-pressed',App.lecturaOn);
+  if(App.lecturaOn) decir('Lectura en voz alta activada. Tocá los textos para escucharlos.');
+  else cancelarVoz();
+}
+/* Síntesis de voz */
+let vozES=null;
+function cargarVoz(){
+  const vs = speechSynthesis.getVoices();
+  vozES = vs.find(v=>/es-AR|es-419|es-MX|es-ES|es_/.test(v.lang)) || vs.find(v=>v.lang.startsWith('es')) || null;
+}
+if('speechSynthesis' in window){ cargarVoz(); speechSynthesis.onvoiceschanged=cargarVoz; }
+function decir(txt,forzar=false){
+  if(!('speechSynthesis' in window)) return;
+  if(!App.lecturaOn && !forzar) return;
+  cancelarVoz();
+  const u=new SpeechSynthesisUtterance(txt);
+  u.lang='es-AR'; u.rate=.95; u.pitch=1.05; if(vozES)u.voice=vozES;
+  speechSynthesis.speak(u);
+}
+function decirSiempre(txt){ const guardado=App.lecturaOn; App.lecturaOn=true; decir(txt); App.lecturaOn=guardado; }
+function cancelarVoz(){ if('speechSynthesis' in window) speechSynthesis.cancel(); }
+/* lee al hacer click en cualquier elemento con data-leer */
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-leer]');
+  if(el && App.lecturaOn){ decir(el.getAttribute('data-leer')||el.textContent); }
+});
+
+/* =====================================================================
+   SONIDOS (Web Audio) + CONFETI + ESTRELLAS
+   ===================================================================== */
+let actx=null;
+function beep(freq,dur=.15,tipo='sine',vol=.18){
+  try{ actx=actx||new(window.AudioContext||window.webkitAudioContext)();
+    const o=actx.createOscillator(),g=actx.createGain();
+    o.type=tipo;o.frequency.value=freq;o.connect(g);g.connect(actx.destination);
+    g.gain.setValueAtTime(vol,actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+dur);
+    o.start();o.stop(actx.currentTime+dur);
+  }catch(e){}
+}
+const sonBien=()=>{beep(660,.12,'triangle');setTimeout(()=>beep(880,.18,'triangle'),110);};
+const sonMal =()=>{beep(200,.22,'sawtooth',.14);};
+const sonClick=()=>beep(520,.06,'square',.08);
+
+function confeti(n=80){
+  const cols=['#6CB6E3','#F6C544','#C0392B','#4FA56B','#fff','#E29B27'];
+  const cont=$('#confeti');
+  for(let i=0;i<n;i++){
+    const c=document.createElement('div');c.className='conf';
+    c.style.left=Math.random()*100+'vw';
+    c.style.background=cols[i%cols.length];
+    c.style.animationDuration=(2+Math.random()*2)+'s';
+    c.style.animationDelay=(Math.random()*.5)+'s';
+    c.style.borderRadius=Math.random()>.5?'50%':'2px';
+    cont.appendChild(c);
+    setTimeout(()=>c.remove(),4200);
+  }
+}
+function sumarEstrella(n=1){
+  App.estrellas+=n;
+  const cont=$('#estrellas-cont'); if(cont) cont.textContent=App.estrellas;
+}
+
+/* =====================================================================
+   DATOS HISTÓRICOS (extraídos de la infografía del cuadernillo)
+   ===================================================================== */
+const INFO_PC = [
+  {ic:'🧔🏻', tit:'¿Quién fue Güemes?', col:'c-azul', txt:[
+    'Fue un valiente líder argentino que luchó por la independencia de nuestro país.',
+    'Nació el 8 de febrero de 1785 en la provincia de Salta.',
+    'Fue militar y político. Dedicó su vida a defender la patria.',
+    'Amaba mucho a su tierra y a su gente.']},
+  {ic:'🐴', tit:'Los Gauchos de Güemes', col:'c-rojo', txt:[
+    'Fueron sus compañeros inseparables.',
+    'Usaban poncho y chiripá.',
+    'Andaban a caballo y conocían muy bien los caminos del norte.',
+    'Ayudaban al ejército patriota con mucha valentía.']},
+  {ic:'⚔️', tit:'¿Qué hizo Güemes?', col:'c-verde', txt:[
+    'Organizó la defensa del norte argentino y detuvo a los invasores.',
+    'Realizó la "Guerra Gaucha", usando el terreno, la rapidez y la sorpresa.',
+    'Protegió a los pueblos para que el ejército de San Martín pudiera avanzar.',
+    'Trabajó siempre por la unidad y el bien de todos.']},
+  {ic:'⭐', tit:'¿Por qué es importante?', col:'c-sol', txt:[
+    'Gracias a Güemes y sus gauchos se defendió el norte argentino.',
+    'Su lucha fue clave para lograr la independencia.',
+    'Su valentía, humildad y amor por la patria nos inspiran hasta hoy.']},
+  {ic:'🕊️', tit:'¿Cómo murió?', col:'c-violeta', txt:[
+    'El 7 de junio de 1821 fue herido en una emboscada.',
+    'Sus gauchos lo cuidaron varios días, pero las heridas eran muy graves.',
+    'El 17 de junio de 1821 falleció en la Cañada de la Horqueta, defendiendo la libertad.']},
+  {ic:'📍', tit:'¿Dónde nació?', col:'c-tierra', txt:[
+    'Nació en Salta, una provincia del noroeste argentino.',
+    'Desde joven amó su tierra, su gente y sus tradiciones.']},
+];
+
+const INFO_SC = [
+  {ic:'🧔🏻', tit:'¿Quién fue?', col:'c-azul', txt:[
+    'Martín Miguel de Güemes nació el 8 de febrero de 1785 en la ciudad de Salta.',
+    'Fue militar, político y uno de los principales protagonistas de la lucha por la independencia argentina.']},
+  {ic:'⚔️', tit:'Sus comienzos', col:'c-rojo', txt:[
+    'Desde joven se incorporó a la carrera militar.',
+    'Participó en las Invasiones Inglesas (1806 y 1807), donde demostró su valentía.',
+    'Tras la Revolución de Mayo de 1810, se sumó a la lucha por la independencia.']},
+  {ic:'🏛️', tit:'Gobernador de Salta', col:'c-verde', txt:[
+    'En 1815 fue elegido gobernador de Salta.',
+    'Desde ese cargo organizó la defensa del norte y apoyó los planes de los patriotas.']},
+  {ic:'🐎', tit:'Los Gauchos Infernales', col:'c-tierra', txt:[
+    'Güemes formó un ejército con gauchos del norte.',
+    'Conocían el territorio y usaban ataques rápidos para enfrentar a los realistas.',
+    'Gracias a ellos el norte argentino pudo defenderse muchas veces.']},
+  {ic:'💥', tit:'La Guerra Gaucha', col:'c-violeta', txt:[
+    'Era la estrategia de desgastar al enemigo con ataques sorpresa y emboscadas.',
+    'Aprovechaban el conocimiento del terreno. Por eso recibió el nombre de "Guerra Gaucha".']},
+  {ic:'💌', tit:'Macacha Güemes', col:'c-rojo', txt:[
+    'Su hermana, Macacha Güemes, fue una importante colaboradora.',
+    'Ayudó a transmitir información y a mantener la comunicación entre los patriotas.',
+    'Su participación fue fundamental para muchas acciones.']},
+  {ic:'🗺️', tit:'¿Dónde actuó?', col:'c-azul', txt:[
+    'Defendió el norte argentino, una región clave.',
+    'Sus acciones impidieron que los realistas avanzaran desde el Alto Perú (actual Bolivia) hacia el resto del país.']},
+  {ic:'🕊️', tit:'Su muerte', col:'c-violeta', txt:[
+    'El 17 de junio de 1821 falleció a causa de una herida recibida en un enfrentamiento con los realistas.',
+    'A pesar de su estado, siguió dirigiendo la resistencia hasta sus últimos días.']},
+];
+
+const TIMELINE = [
+  {a:'1785', t:'Nace en Salta', em:'👶'},
+  {a:'1806-1807', t:'Participa en las Invasiones Inglesas', em:'🚢'},
+  {a:'1810', t:'Apoya la Revolución de Mayo', em:'📜'},
+  {a:'1815', t:'Es elegido Gobernador de Salta', em:'🏛️'},
+  {a:'1821', t:'Fallece el 17 de junio defendiendo la patria', em:'🕊️'},
+];
+
+/* =====================================================================
+   PORTADA / INICIO
+   ===================================================================== */
+function renderInicio(){
+  $('#vista-inicio').innerHTML = `
+  <section class="hero">
+    <div class="cielo"></div>
+    <div class="nube" style="width:120px;height:38px;top:30px;left:8%"></div>
+    <div class="nube" style="width:90px;height:30px;top:70px;right:12%"></div>
+    <div class="banderin" data-leer="17 de Junio. Paso a la inmortalidad de Martín Miguel de Güemes.">★ 17 DE JUNIO ★</div>
+    <h1 data-leer="Martín Miguel de Güemes">MARTÍN MIGUEL<br><span>DE GÜEMES</span></h1>
+    <p class="sub">Héroe de la Independencia Argentina · El defensor del Norte</p>
+    ${svgGaucho()}
+    <p class="frase" data-leer="Defender la patria también es cuidar nuestra libertad.">🌟 «Defender la patria también es cuidar nuestra libertad» 🌟</p>
+  </section>
+
+  <div class="wrap">
+    <h2 class="titulo-seccion">🎮 ¡Elegí tu aventura!</h2>
+    <p class="bajada">Una plataforma para aprender jugando sobre Güemes, los Gauchos Infernales y la Guerra Gaucha. Elegí por dónde empezar:</p>
+    <div class="grid-cards">
+
+      <button class="card-nav c-azul" onclick="abrirCiclo('pc')" data-leer="Primer Ciclo. Primero, segundo y tercer grado. Juegos para los más chicos.">
+        <span class="edad">1°·2°·3°</span>
+        <span class="emoji">🧒</span>
+        <h3>Primer Ciclo</h3>
+        <p>Juegos para los más chiquitos: pintar, armar y descubrir.</p>
+      </button>
+
+      <button class="card-nav c-rojo" onclick="abrirCiclo('sc')" data-leer="Segundo Ciclo. Cuarto, quinto y sexto grado. Desafíos para los más grandes.">
+        <span class="edad">4°·5°·6°</span>
+        <span class="emoji">🧑</span>
+        <h3>Segundo Ciclo</h3>
+        <p>Desafíos para los más grandes: acertijos, líneas de tiempo y más.</p>
+      </button>
+
+      <button class="card-nav c-verde" onclick="abrirCiclo('di')" data-leer="Aula para todos. Actividades adaptadas con mucho apoyo, ideales para discapacidad intelectual.">
+        <span class="edad">♿ Inclusiva</span>
+        <span class="emoji">🧩</span>
+        <h3>Aula para Todos</h3>
+        <p>Actividades simples, con mucho apoyo y refuerzo positivo.</p>
+      </button>
+
+      <button class="card-nav c-violeta" onclick="abrirCiclo('av')" data-leer="Escuchar y tocar. Sección con narración en voz alta y letras grandes, para apoyo visual.">
+        <span class="edad">👁️ Apoyo visual</span>
+        <span class="emoji">🔊</span>
+        <h3>Escuchar y Tocar</h3>
+        <p>Todo narrado en voz alta, con letras grandes y mucho contraste.</p>
+      </button>
+
+    </div>
+
+    <h2 class="titulo-seccion">👩‍🏫 Para el aula</h2>
+    <p class="bajada">Cada sección reúne juegos inspirados en Genially, Wordwall, Kahoot, Educaplay y Baamboozle, pensados como complemento del cuadernillo digital. Todo funciona sin instalar nada, en celular, tablet o computadora.</p>
+    <div class="grid-cards">
+      <div class="card-nav c-sol" style="cursor:default">
+        <span class="emoji">🎯</span><h3>+15 juegos</h3><p>Quiz, anagramas, sopa de letras, secuencias, crucigrama, ¡y más!</p>
+      </div>
+      <div class="card-nav c-tierra" style="cursor:default">
+        <span class="emoji">♿</span><h3>Accesible</h3><p>Lectura en voz alta, texto grande, alto contraste y modo calmo.</p>
+      </div>
+      <div class="card-nav c-azul" style="cursor:default">
+        <span class="emoji">💛</span><h3>Valores</h3><p>Valentía, humildad, libertad, identidad y amor por la patria.</p>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* =====================================================================
+   MENÚ DE JUEGOS POR CICLO
+   ===================================================================== */
+const MENUS = {
+  pc:{titulo:'🧒 Primer Ciclo', clase:'',
+    desc:'Tocá un juego para empezar. ¡Vas a ganar estrellas! ⭐',
+    juegos:[
+      {id:'info_pc', ic:'🔎', t:'Conocé a Güemes', s:'Infografía interactiva', tag:'Explorar'},
+      {id:'vf_pc', ic:'✅', t:'¿Verdadero o Falso?', s:'Tocá la respuesta correcta', tag:'Quiz'},
+      {id:'anagrama', ic:'🔤', t:'Ordená las letras', s:'Descubrí la palabra escondida', tag:'Letras'},
+      {id:'unir', ic:'🔗', t:'Unir con su palabra', s:'Imagen + palabra', tag:'Memoria'},
+      {id:'secuencia', ic:'🪜', t:'La vida de Güemes', s:'Ordená la secuencia', tag:'Ordenar'},
+      {id:'sopa_pc', ic:'🔍', t:'Sopa de letras', s:'Buscá las palabras', tag:'Buscar'},
+      {id:'cruci', ic:'🧩', t:'Crucigrama', s:'Completá con pistas', tag:'Pistas'},
+      {id:'pintar', ic:'🎨', t:'Pintá a Güemes', s:'Coloreá libremente', tag:'Arte'},
+    ]},
+  sc:{titulo:'🧑 Segundo Ciclo', clase:'',
+    desc:'Desafíos para pensar y aprender. Sumá estrellas resolviendo cada uno. ⭐',
+    juegos:[
+      {id:'info_sc', ic:'📖', t:'Güemes en detalle', s:'Infografía + cita histórica', tag:'Explorar'},
+      {id:'vf_sc', ic:'⚖️', t:'V o F con justificación', s:'Pensá tu respuesta', tag:'Quiz'},
+      {id:'acertijos', ic:'🕵️', t:'Los acertijos de Güemes', s:'Adiviná de quién se trata', tag:'Pistas'},
+      {id:'tiempo', ic:'📅', t:'Línea de tiempo', s:'Ordená los hechos por año', tag:'Ordenar'},
+      {id:'cuadro', ic:'📊', t:'Cuadro histórico', s:'¿Quién fue? ¿Qué hizo?', tag:'Clasificar'},
+      {id:'sopa_sc', ic:'🔍', t:'Sopa de letras', s:'Incluye a Macacha', tag:'Buscar'},
+      {id:'cruci', ic:'🧩', t:'Crucigrama', s:'Completá con pistas', tag:'Pistas'},
+      {id:'instagram', ic:'📱', t:'Güemes en 1815', s:'Creá su posteo histórico', tag:'Crear'},
+    ]},
+  di:{titulo:'🧩 Aula para Todos', clase:'',
+    desc:'Actividades cortas, con pictogramas, mucho apoyo y festejo en cada acierto. 💚 Se recomienda activar 🔊 «Leer en voz alta».',
+    juegos:[
+      {id:'mirar', ic:'👀', t:'Mirá y escuchá', s:'Conocé a Güemes paso a paso', tag:'Mirar'},
+      {id:'vf_facil', ic:'👍', t:'¿Sí o No?', s:'Dos opciones grandes', tag:'Elegir'},
+      {id:'unir_facil', ic:'🧲', t:'Unir parejas', s:'Solo 3 parejas', tag:'Unir'},
+      {id:'sec_facil', ic:'1️⃣', t:'Primero y después', s:'Ordená 3 momentos', tag:'Ordenar'},
+      {id:'pintar', ic:'🎨', t:'Pintar a Güemes', s:'Coloreá tranquilo', tag:'Arte'},
+    ]},
+  av:{titulo:'🔊 Escuchar y Tocar', clase:'',
+    desc:'Esta sección está pensada para escuchar. Activá 🔊 «Leer en voz alta» y, si querés, «Texto grande» y «Alto contraste» en la barra de arriba.',
+    juegos:[
+      {id:'audio', ic:'🎧', t:'La historia narrada', s:'Escuchá la vida de Güemes', tag:'Audio'},
+      {id:'vf_audio', ic:'✅', t:'Quiz para escuchar', s:'Pregunta leída en voz alta', tag:'Audio'},
+      {id:'audio_tiempo', ic:'📅', t:'Línea de tiempo hablada', s:'Cada hecho se lee solo', tag:'Audio'},
+    ]},
+};
+
+function abrirCiclo(ciclo){
+  App.ciclo=ciclo; sonClick();
+  const m=MENUS[ciclo];
+  // sugerencias de accesibilidad automáticas
+  if(ciclo==='av' && !App.lecturaOn) toggleLectura();
+  const tiles = m.juegos.map(j=>`
+    <button class="tile" onclick="abrirJuego('${j.id}')" data-leer="${j.t}. ${j.s}">
+      <span class="ic">${j.ic}</span>
+      <h4>${j.t}</h4>
+      <small>${j.s}</small>
+      <span class="pill">${j.tag}</span>
+    </button>`).join('');
+  $('#vista-menu').innerHTML = `
+  <div class="wrap">
+    <div style="text-align:center;margin:6px 0 18px">
+      <button class="btn-volver" onclick="ir('inicio')">⟵ Inicio</button>
+    </div>
+    <div class="cinta-ciclo">
+      <span class="lbl">${m.titulo}</span>
+      <span class="chip estrella">⭐ <span id="estrellas-cont">${App.estrellas}</span></span>
+    </div>
+    <p class="bajada" data-leer="${m.desc.replace(/"/g,'')}">${m.desc}</p>
+    <div class="grid-juegos">${tiles}</div>
+  </div>`;
+  ir('menu');
+  if(App.lecturaOn) decir(m.titulo+'. '+m.desc);
+}
+
+/* =====================================================================
+   DISPATCHER DE JUEGOS  (las funciones viven en games.js)
+   ===================================================================== */
+function abrirJuego(id){
+  sonClick();
+  const cont=$('#vista-juego');
+  const fn = JUEGOS[id];
+  if(!fn){ cont.innerHTML='<div class="wrap"><div class="juego"><h2>Próximamente</h2></div></div>'; ir('juego'); return; }
+  cont.innerHTML = `<div class="wrap">
+    <div style="text-align:center;margin:6px 0 12px">
+      <button class="btn-volver" onclick="abrirCiclo('${App.ciclo}')">⟵ Volver a los juegos</button>
+      <span class="chip estrella" style="vertical-align:middle">⭐ <span id="estrellas-cont">${App.estrellas}</span></span>
+    </div>
+    <div id="zona-juego"></div>
+  </div>`;
+  ir('juego');
+  fn($('#zona-juego'));
+}
+
+/* ---------- Botón "leer esta pantalla" ---------- */
+function btnLeer(texto){
+  return `<button class="btn-leer" onclick='decirSiempre(${JSON.stringify(texto)})'>🔊 Escuchar</button>`;
+}
+
+/* ---------- Medalla final reutilizable ---------- */
+function medallaFinal(zona,msg,onContinuar){
+  confeti(120); sonBien();
+  zona.innerHTML = `<div class="juego"><div class="medalla">
+    <div class="escudo">🏅</div>
+    <h3>¡Excelente trabajo!</h3>
+    <p style="font-weight:800;color:var(--tierra);max-width:520px;margin:8px auto" data-leer="${msg.replace(/"/g,'')}">${msg}</p>
+    ${btnLeer(msg)}
+    <button class="btn-grande" onclick="abrirCiclo('${App.ciclo}')">🎮 Jugar otra cosa</button>
+  </div></div>`;
+  if(App.lecturaOn) decirSiempre('¡Excelente trabajo! '+msg);
+}
+
+/* ---------- SVG mascota gaucho (inline, sin dependencias) ---------- */
+function svgGaucho(){
+  return `<svg class="mascota float-anim" viewBox="0 0 240 220" xmlns="http://www.w3.org/2000/svg" aria-label="Ilustración de Güemes a caballo">
+    <ellipse cx="120" cy="205" rx="80" ry="12" fill="rgba(0,0,0,.12)"/>
+    <!-- caballo -->
+    <path d="M55 200 q-5-60 35-78 q30-14 70-6 q35 7 38 40 q2 30-8 44 l-12 0 -6-30 -50 4 -8 26z" fill="#8B5E3C"/>
+    <path d="M60 200l4-26 12 0 -2 26z" fill="#6e4a2f"/>
+    <path d="M170 200l6-26 11 0 -3 26z" fill="#6e4a2f"/>
+    <path d="M183 110 q22-6 30 8 q4 8-4 14 q-10 6-22-4z" fill="#8B5E3C"/>
+    <path d="M205 116l8-3 2 8-7 2z" fill="#5a3a23"/>
+    <circle cx="200" cy="120" r="2.6" fill="#2a1c10"/>
+    <!-- poncho/jinete -->
+    <path d="M96 95 q24-14 46 0 l10 44 q-33 12-66 0z" fill="#C0392B"/>
+    <path d="M119 70 a14 14 0 1 1 .1 0z" fill="#f0c9a0"/>
+    <path d="M106 64 q13-16 28 0 q-3-12-14-12 q-11 0-14 12z" fill="#3a2a1a"/>
+    <path d="M104 62 q15-6 30 0 l3 6 q-18-6-36 0z" fill="#5a3a23"/>
+    <rect x="116" y="80" width="8" height="5" rx="2" fill="#3a2a1a"/>
+    <!-- bandera -->
+    <rect x="150" y="40" width="3" height="70" fill="#6e4a2f"/>
+    <path d="M153 42 h40 v26 h-40z" fill="#fff"/>
+    <path d="M153 42 h40 v8 h-40z" fill="#6CB6E3"/>
+    <path d="M153 60 h40 v8 h-40z" fill="#6CB6E3"/>
+    <circle cx="173" cy="55" r="4" fill="#F6C544"/>
+  </svg>`;
+}
+
+/* =====================================================================
+   ARRANQUE
+   ===================================================================== */
+renderInicio();
+// pequeña ayuda: si las voces tardan, recargar
+setTimeout(cargarVoz,600);

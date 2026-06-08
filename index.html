@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Plataforma educativa interactiva sobre Martín Miguel de Güemes para Nivel Primario. Juegos, actividades y propuestas accesibles. 17 de Junio.">
+<title>¡A las cargas, Güemes! · Plataforma Interactiva 17 de Junio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700&display=swap" rel="stylesheet">
+<style>
+/* ===========================================================
+   VARIABLES Y BASE
+   =========================================================== */
+:root{
+  --celeste:#6CB6E3;
+  --celeste-claro:#B7E2FF;
+  --celeste-oscuro:#2E6FA6;
+  --sol:#F6C544;
+  --sol-oscuro:#E29B27;
+  --poncho:#C0392B;
+  --poncho-osc:#9B2A1E;
+  --tierra:#8B5E3C;
+  --crema:#FFF8EC;
+  --crema2:#FBEDD2;
+  --verde:#4FA56B;
+  --verde-osc:#2F7A49;
+  --violeta:#7E5AA2;
+  --texto:#3A2E22;
+  --blanco:#FFFFFF;
+  --sombra:0 10px 0 rgba(0,0,0,.12);
+  --radio:26px;
+  --fuente-tit:'Fredoka',sans-serif;
+  --fuente-txt:'Nunito',sans-serif;
+  --escala:1;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--fuente-txt);
+  color:var(--texto);
+  background:var(--crema);
+  font-size:calc(17px*var(--escala));
+  line-height:1.5;
+  overflow-x:hidden;
+  background-image:
+    radial-gradient(circle at 12% 18%, rgba(108,182,227,.18) 0 12px, transparent 13px),
+    radial-gradient(circle at 82% 30%, rgba(246,197,68,.20) 0 10px, transparent 11px),
+    radial-gradient(circle at 30% 75%, rgba(192,57,43,.10) 0 14px, transparent 15px),
+    radial-gradient(circle at 68% 88%, rgba(79,165,107,.13) 0 11px, transparent 12px);
+  background-attachment:fixed;
+}
+img{max-width:100%}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+
+/* ===========================================================
+   BARRA SUPERIOR DE ACCESIBILIDAD
+   =========================================================== */
+.barra-acc{
+  position:sticky;top:0;z-index:200;
+  background:linear-gradient(90deg,var(--celeste-oscuro),var(--celeste));
+  display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;
+  padding:8px 12px;
+  box-shadow:0 4px 14px rgba(0,0,0,.18);
+}
+.barra-acc .marca{
+  font-family:var(--fuente-tit);font-weight:700;color:#fff;
+  font-size:1.05em;margin-right:auto;display:flex;align-items:center;gap:8px;
+  text-shadow:0 2px 0 rgba(0,0,0,.25);cursor:pointer;
+}
+.barra-acc .marca .escarapela{width:30px;height:30px}
+.btn-acc{
+  background:rgba(255,255,255,.92);color:var(--celeste-oscuro);
+  font-weight:800;font-size:.85em;border-radius:40px;
+  padding:8px 14px;display:flex;align-items:center;gap:6px;
+  border:3px solid transparent;transition:.15s;white-space:nowrap;
+}
+.btn-acc:hover{transform:translateY(-2px)}
+.btn-acc:focus-visible{outline:4px solid var(--sol)}
+.btn-acc.activo{background:var(--sol);color:#3a2e22;border-color:#fff}
+.btn-acc .ic{font-size:1.15em}
+
+/* ===========================================================
+   CONTENEDOR / SECCIONES (router)
+   =========================================================== */
+.vista{display:none;animation:entra .45s ease both}
+.vista.activa{display:block}
+@keyframes entra{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+.wrap{max-width:1080px;margin:0 auto;padding:18px clamp(14px,4vw,34px) 90px}
+
+/* ===========================================================
+   HERO / PORTADA
+   =========================================================== */
+.hero{
+  position:relative;text-align:center;padding:36px 18px 30px;overflow:hidden;
+}
+.hero .cielo{
+  position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(180deg,var(--celeste-claro) 0%, #d8f0ff 55%, var(--crema) 100%);
+}
+.hero .nube{position:absolute;background:#fff;border-radius:50px;opacity:.85;filter:blur(.3px)}
+.banderin{
+  display:inline-block;background:var(--celeste-oscuro);color:#fff;
+  font-family:var(--fuente-tit);font-weight:700;letter-spacing:1px;
+  padding:8px 26px;border-radius:40px;font-size:1.1em;
+  box-shadow:0 6px 0 var(--celeste-oscuro);transform:rotate(-1.5deg);
+  border:3px solid #fff;
+}
+.hero h1{
+  font-family:var(--fuente-tit);font-weight:700;line-height:.95;
+  font-size:clamp(2.6rem,9vw,5.2rem);margin:14px 0 4px;
+  color:var(--poncho);
+  text-shadow:3px 3px 0 #fff, 6px 6px 0 rgba(192,57,43,.25);
+}
+.hero h1 span{color:var(--celeste-oscuro)}
+.hero .sub{font-family:var(--fuente-tit);font-size:clamp(1rem,3.4vw,1.5rem);color:var(--tierra);font-weight:600}
+.hero .mascota{width:min(280px,62vw);margin:6px auto -4px;display:block;filter:drop-shadow(0 12px 10px rgba(0,0,0,.2))}
+.hero .frase{
+  max-width:560px;margin:14px auto 0;background:#fff;border:4px dashed var(--sol-oscuro);
+  border-radius:20px;padding:12px 18px;font-weight:800;color:var(--tierra);font-size:1.02em;
+}
+
+/* ===========================================================
+   TARJETONES DE NAVEGACIÓN
+   =========================================================== */
+.titulo-seccion{
+  font-family:var(--fuente-tit);font-weight:700;text-align:center;
+  font-size:clamp(1.6rem,5vw,2.6rem);color:var(--celeste-oscuro);
+  margin:34px 0 6px;text-shadow:2px 2px 0 #fff;
+}
+.bajada{text-align:center;color:var(--tierra);font-weight:700;max-width:680px;margin:0 auto 22px}
+.grid-cards{display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.card-nav{
+  position:relative;border-radius:var(--radio);padding:26px 22px 24px;text-align:center;
+  color:#fff;border:5px solid #fff;box-shadow:var(--sombra);transition:.18s;overflow:hidden;
+  display:flex;flex-direction:column;align-items:center;gap:8px;min-height:210px;justify-content:center;
+}
+.card-nav:hover{transform:translateY(-6px) rotate(-.6deg)}
+.card-nav:active{transform:translateY(-1px)}
+.card-nav .emoji{font-size:3.2rem;filter:drop-shadow(0 4px 2px rgba(0,0,0,.2))}
+.card-nav h3{font-family:var(--fuente-tit);font-weight:700;font-size:1.5rem;line-height:1.05}
+.card-nav p{font-weight:700;font-size:.95em;opacity:.96}
+.card-nav .edad{position:absolute;top:10px;right:12px;background:rgba(255,255,255,.9);color:#3a2e22;font-weight:900;font-size:.72em;padding:3px 10px;border-radius:20px}
+.c-azul{background:linear-gradient(160deg,var(--celeste),var(--celeste-oscuro))}
+.c-rojo{background:linear-gradient(160deg,#e35745,var(--poncho-osc))}
+.c-verde{background:linear-gradient(160deg,#6cc287,var(--verde-osc))}
+.c-violeta{background:linear-gradient(160deg,#9a78c0,var(--violeta))}
+.c-sol{background:linear-gradient(160deg,var(--sol),var(--sol-oscuro));color:#5a4316}
+.c-tierra{background:linear-gradient(160deg,#a9784f,var(--tierra))}
+
+/* ===========================================================
+   MENÚ DE JUEGOS
+   =========================================================== */
+.cinta-ciclo{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:center;
+  background:#fff;border:4px solid var(--celeste);border-radius:50px;
+  padding:10px 20px;max-width:760px;margin:0 auto 8px;box-shadow:0 6px 0 rgba(46,111,166,.18)
+}
+.cinta-ciclo .lbl{font-family:var(--fuente-tit);font-size:1.4rem;color:var(--celeste-oscuro)}
+.btn-volver{
+  display:inline-flex;align-items:center;gap:8px;background:var(--sol);color:#5a4316;
+  font-family:var(--fuente-tit);font-weight:700;font-size:1.05em;
+  padding:10px 22px;border-radius:40px;box-shadow:0 5px 0 var(--sol-oscuro);transition:.15s;margin:4px
+}
+.btn-volver:hover{transform:translateY(-2px)}
+.btn-volver:active{transform:translateY(2px);box-shadow:0 1px 0 var(--sol-oscuro)}
+.grid-juegos{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-top:24px}
+.tile{
+  background:#fff;border-radius:24px;border:4px solid var(--crema2);padding:20px 16px;
+  text-align:center;box-shadow:0 7px 0 rgba(0,0,0,.08);transition:.16s;cursor:pointer;
+  display:flex;flex-direction:column;gap:6px;align-items:center
+}
+.tile:hover{transform:translateY(-5px);border-color:var(--sol)}
+.tile .ic{font-size:2.8rem}
+.tile h4{font-family:var(--fuente-tit);font-weight:600;font-size:1.18rem;color:var(--texto)}
+.tile small{font-weight:700;color:var(--tierra);opacity:.85}
+.tile .pill{font-size:.7em;font-weight:900;color:#fff;background:var(--verde);padding:2px 10px;border-radius:20px;margin-top:2px}
+
+/* ===========================================================
+   PANTALLA DE JUEGO (genérica)
+   =========================================================== */
+.juego{background:#fff;border-radius:var(--radio);border:5px solid var(--celeste-claro);
+  box-shadow:0 12px 0 rgba(46,111,166,.12);padding:clamp(18px,4vw,34px);margin-top:18px;position:relative}
+.juego h2{font-family:var(--fuente-tit);font-weight:700;color:var(--poncho);font-size:clamp(1.5rem,5vw,2.2rem);text-align:center;margin-bottom:4px}
+.juego .consigna{text-align:center;font-weight:700;color:var(--tierra);max-width:640px;margin:0 auto 18px}
+.barra-juego{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.marcador{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.chip{background:var(--crema2);border-radius:30px;padding:6px 16px;font-weight:900;color:var(--tierra);display:flex;align-items:center;gap:6px}
+.chip.estrella{background:var(--sol);color:#5a4316}
+.btn-leer{background:var(--celeste);color:#fff;border-radius:30px;padding:8px 16px;font-weight:800;display:inline-flex;gap:8px;align-items:center;box-shadow:0 4px 0 var(--celeste-oscuro)}
+.btn-leer:active{transform:translateY(2px);box-shadow:0 1px 0 var(--celeste-oscuro)}
+
+/* ---- Botones de respuesta tipo Kahoot ---- */
+.opciones-vf{display:grid;gap:16px;grid-template-columns:1fr 1fr;max-width:560px;margin:18px auto}
+.btn-vf{font-family:var(--fuente-tit);font-weight:700;font-size:1.6rem;color:#fff;border-radius:24px;
+  padding:30px 14px;border:5px solid #fff;box-shadow:0 8px 0 rgba(0,0,0,.18);transition:.12s;display:flex;flex-direction:column;align-items:center;gap:4px}
+.btn-vf .em{font-size:2.4rem}
+.btn-vf:hover{transform:translateY(-3px)}
+.btn-vf:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.18)}
+.btn-vf.v{background:linear-gradient(160deg,#6cc287,var(--verde-osc))}
+.btn-vf.f{background:linear-gradient(160deg,#e35745,var(--poncho-osc))}
+.btn-vf:disabled{opacity:.45;filter:grayscale(.4)}
+
+.pregunta-card{background:var(--crema);border-radius:20px;padding:22px;text-align:center;font-weight:800;
+  font-size:clamp(1.15rem,3.6vw,1.6rem);color:var(--texto);border:4px dashed var(--celeste);max-width:680px;margin:0 auto}
+.feedback{text-align:center;font-family:var(--fuente-tit);font-weight:700;font-size:1.5rem;min-height:40px;margin:14px 0}
+.feedback.bien{color:var(--verde-osc)}
+.feedback.mal{color:var(--poncho)}
+.explica{text-align:center;background:#FFF7DD;border:3px solid var(--sol);border-radius:16px;padding:12px 16px;font-weight:700;color:var(--tierra);max-width:620px;margin:0 auto 8px;display:none}
+
+.btn-grande{display:block;margin:18px auto 0;background:var(--verde);color:#fff;font-family:var(--fuente-tit);
+  font-weight:700;font-size:1.3rem;padding:14px 40px;border-radius:50px;box-shadow:0 6px 0 var(--verde-osc);transition:.14s}
+.btn-grande:hover{transform:translateY(-2px)}
+.btn-grande:active{transform:translateY(4px);box-shadow:0 2px 0 var(--verde-osc)}
+.btn-grande.azul{background:var(--celeste);box-shadow:0 6px 0 var(--celeste-oscuro)}
+.btn-grande.azul:active{box-shadow:0 2px 0 var(--celeste-oscuro)}
+
+/* ---- Multiple choice (acertijos/quiz) ---- */
+.opciones-mc{display:grid;gap:14px;max-width:640px;margin:18px auto;grid-template-columns:1fr 1fr}
+.btn-mc{font-family:var(--fuente-tit);font-weight:600;font-size:1.2rem;color:#fff;border-radius:20px;padding:20px 14px;
+  border:4px solid #fff;box-shadow:0 7px 0 rgba(0,0,0,.16);transition:.12s}
+.btn-mc:nth-child(4n+1){background:linear-gradient(160deg,#e35745,var(--poncho-osc))}
+.btn-mc:nth-child(4n+2){background:linear-gradient(160deg,var(--celeste),var(--celeste-oscuro))}
+.btn-mc:nth-child(4n+3){background:linear-gradient(160deg,var(--sol),var(--sol-oscuro));color:#5a4316;-webkit-text-fill-color:#5a4316}
+.btn-mc:nth-child(4n){background:linear-gradient(160deg,#6cc287,var(--verde-osc))}
+.btn-mc:hover{transform:translateY(-3px)}
+.btn-mc:active{transform:translateY(3px)}
+.btn-mc.correcta{outline:6px solid #2ecc71;outline-offset:2px}
+.btn-mc.incorrecta{opacity:.4}
+.btn-mc:disabled{cursor:default}
+
+/* ---- Anagramas ---- */
+.anagrama-zona{max-width:560px;margin:0 auto;text-align:center}
+.letras-disp{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:14px 0}
+.casillas{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;min-height:64px;margin:10px 0}
+.ficha{width:56px;height:64px;border-radius:14px;background:var(--sol);color:#5a4316;font-family:var(--fuente-tit);
+  font-weight:700;font-size:2rem;display:flex;align-items:center;justify-content:center;box-shadow:0 5px 0 var(--sol-oscuro);
+  border:3px solid #fff;transition:.12s;user-select:none}
+.ficha:hover{transform:translateY(-3px)}
+.ficha.usada{opacity:.25;pointer-events:none}
+.casilla{width:56px;height:64px;border-radius:14px;border:4px dashed var(--celeste);background:var(--crema);
+  display:flex;align-items:center;justify-content:center;font-family:var(--fuente-tit);font-size:2rem;font-weight:700;color:var(--celeste-oscuro);cursor:pointer}
+.casilla.llena{background:var(--celeste);color:#fff;border-style:solid}
+.pista-img{font-size:3.4rem;margin:6px}
+
+/* ---- Memotest / Unir ---- */
+.tablero-unir{display:grid;gap:16px;grid-template-columns:1fr 1fr;max-width:620px;margin:10px auto}
+.col-unir{display:flex;flex-direction:column;gap:14px}
+.item-unir{border-radius:18px;padding:16px;font-weight:800;font-size:1.15rem;text-align:center;border:4px solid #fff;
+  box-shadow:0 5px 0 rgba(0,0,0,.12);transition:.12s;background:var(--celeste);color:#fff}
+.item-unir.palabra{background:var(--poncho)}
+.item-unir.imagen{font-size:3rem;background:#fff;color:var(--texto);border-color:var(--crema2)}
+.item-unir:hover{transform:translateY(-2px)}
+.item-unir.sel{outline:6px solid var(--sol);outline-offset:2px}
+.item-unir.ok{background:var(--verde) !important;color:#fff;pointer-events:none;opacity:.9}
+
+/* ---- Secuencia / Línea de tiempo (ordenar) ---- */
+.lista-orden{display:flex;flex-direction:column;gap:12px;max-width:620px;margin:0 auto}
+.evento{display:flex;align-items:center;gap:14px;background:var(--crema);border:4px solid var(--crema2);
+  border-radius:18px;padding:14px 16px;font-weight:800;cursor:grab;transition:.12s}
+.evento:hover{border-color:var(--celeste)}
+.evento.arrastrando{opacity:.5;border-style:dashed}
+.evento .num{min-width:42px;height:42px;border-radius:50%;background:var(--celeste-oscuro);color:#fff;
+  font-family:var(--fuente-tit);font-size:1.3rem;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.evento .em{font-size:1.9rem}
+.evento.ok .num{background:var(--verde)}
+.flechas{display:flex;flex-direction:column;gap:4px;margin-left:auto}
+.flechas button{background:var(--sol);color:#5a4316;width:38px;height:30px;border-radius:10px;font-weight:900;font-size:1.1em;box-shadow:0 3px 0 var(--sol-oscuro)}
+.flechas button:active{transform:translateY(2px);box-shadow:none}
+
+/* ---- Sopa de letras ---- */
+.sopa-cont{display:flex;flex-wrap:wrap;gap:24px;justify-content:center;align-items:flex-start}
+.sopa-grid{display:grid;gap:3px;background:var(--celeste-oscuro);padding:8px;border-radius:16px;touch-action:none}
+.celda{width:clamp(26px,7vw,40px);height:clamp(26px,7vw,40px);background:#fff;border-radius:7px;
+  display:flex;align-items:center;justify-content:center;font-family:var(--fuente-tit);font-weight:700;
+  font-size:clamp(.9rem,3.4vw,1.3rem);color:var(--texto);user-select:none;cursor:pointer;transition:background .1s}
+.celda.sel{background:var(--sol)}
+.celda.found{background:var(--verde);color:#fff}
+.lista-buscar{display:flex;flex-direction:column;gap:8px;min-width:140px}
+.lista-buscar h4{font-family:var(--fuente-tit);color:var(--celeste-oscuro)}
+.palabra-buscar{background:var(--crema2);border-radius:30px;padding:6px 16px;font-weight:900;color:var(--tierra);text-align:center;transition:.2s}
+.palabra-buscar.tachada{background:var(--verde);color:#fff;text-decoration:line-through}
+
+/* ---- Crucigrama acróstico ---- */
+.acrostico{display:flex;flex-direction:column;gap:8px;max-width:760px;margin:0 auto}
+.fila-cruci{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.fila-cruci .pista{flex:1;min-width:220px;font-weight:700;color:var(--tierra);font-size:.95em}
+.fila-cruci .nro{width:32px;height:32px;border-radius:50%;background:var(--poncho);color:#fff;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.celdas-cruci{display:flex;gap:4px}
+.cb{width:40px;height:40px;border:3px solid var(--celeste);border-radius:8px;text-align:center;
+  font-family:var(--fuente-tit);font-weight:700;font-size:1.3rem;color:var(--texto);text-transform:uppercase;background:#fff}
+.cb:focus{outline:3px solid var(--sol);border-color:var(--sol)}
+.cb.spine{background:var(--sol);border-color:var(--sol-oscuro)}
+.cb.ok{background:var(--verde);color:#fff;border-color:var(--verde-osc)}
+
+/* ---- Infografía interactiva ---- */
+.info-grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.info-card{border-radius:20px;padding:18px;color:#fff;box-shadow:0 7px 0 rgba(0,0,0,.12);cursor:pointer;transition:.16s;border:4px solid #fff;position:relative;overflow:hidden}
+.info-card:hover{transform:translateY(-4px) scale(1.01)}
+.info-card .tit{font-family:var(--fuente-tit);font-weight:700;font-size:1.25rem;display:flex;align-items:center;gap:8px}
+.info-card .cont{margin-top:8px;font-weight:600;font-size:.96em;max-height:0;overflow:hidden;transition:max-height .35s ease;opacity:0}
+.info-card.abierta .cont{max-height:600px;opacity:1;margin-top:10px}
+.info-card .toca{font-weight:800;font-size:.8em;opacity:.85;margin-top:8px;display:block}
+.info-card.abierta .toca{display:none}
+.info-card ul{margin:6px 0 0 18px}
+.info-card li{margin:4px 0}
+.cita-guemes{grid-column:1/-1;background:linear-gradient(120deg,#fff,#fff7df);color:var(--tierra);border:4px dashed var(--sol-oscuro);
+  text-align:center;font-family:var(--fuente-tit);font-weight:600;font-size:clamp(1.2rem,4vw,1.7rem);padding:24px;border-radius:20px}
+.cita-guemes small{display:block;font-family:var(--fuente-txt);font-weight:800;font-size:.6em;margin-top:8px;color:var(--poncho)}
+
+/* ---- Pintar ---- */
+.paint-tools{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:14px}
+.swatch{width:46px;height:46px;border-radius:50%;border:4px solid #fff;box-shadow:0 4px 0 rgba(0,0,0,.18);cursor:pointer;transition:.12s}
+.swatch:hover{transform:scale(1.1)}
+.swatch.sel{outline:5px solid var(--celeste-oscuro);outline-offset:2px}
+.paint-canvas{display:block;margin:0 auto;background:#fff;border:4px solid var(--crema2);border-radius:16px;max-width:100%;touch-action:none;cursor:crosshair}
+
+/* ---- Instagram 1815 ---- */
+.ig-builder{display:grid;gap:20px;grid-template-columns:1fr 1fr;align-items:start}
+.ig-form label{display:block;font-weight:800;color:var(--tierra);margin:10px 0 4px}
+.ig-form input,.ig-form textarea{width:100%;border:3px solid var(--celeste);border-radius:12px;padding:10px;font-family:inherit;font-size:1em;font-weight:600}
+.ig-form textarea{min-height:80px;resize:vertical}
+.ig-post{background:#fff;border:1px solid #dbdbdb;border-radius:14px;overflow:hidden;box-shadow:0 8px 22px rgba(0,0,0,.12);max-width:380px;margin:0 auto;width:100%}
+.ig-head{display:flex;align-items:center;gap:10px;padding:10px}
+.ig-avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(45deg,var(--sol),var(--poncho));padding:2px}
+.ig-avatar svg{background:#fff;border-radius:50%}
+.ig-user{font-weight:800;font-size:.95em}
+.ig-user small{display:block;font-weight:600;color:#888;font-size:.82em}
+.ig-img{aspect-ratio:1;background:linear-gradient(160deg,var(--celeste-claro),var(--celeste));display:flex;align-items:center;justify-content:center;font-size:6rem}
+.ig-actions{display:flex;gap:14px;padding:10px;font-size:1.5rem}
+.ig-likes{padding:0 10px;font-weight:800;font-size:.9em}
+.ig-caption{padding:6px 10px 12px;font-size:.92em}
+.ig-caption b{font-weight:800}
+.ig-coment{padding:0 10px 12px;color:#444;font-size:.86em}
+.ig-coment div{margin-top:4px}
+
+/* ---- Cuadro histórico (match) ---- */
+.cuadro-hist{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.ch-col{background:var(--crema);border:4px solid var(--crema2);border-radius:18px;padding:16px}
+.ch-col h4{font-family:var(--fuente-tit);text-align:center;color:var(--celeste-oscuro);font-size:1.3rem;margin-bottom:8px}
+.ch-drop{min-height:70px;border:3px dashed var(--celeste);border-radius:14px;padding:8px;display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.ch-pieza{background:#fff;border:3px solid var(--crema2);border-radius:12px;padding:10px;font-weight:700;cursor:grab;box-shadow:0 3px 0 rgba(0,0,0,.08)}
+.ch-pieza.ok{background:var(--verde);color:#fff;border-color:var(--verde-osc)}
+.ch-banco{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:16px auto;max-width:760px}
+
+/* ===========================================================
+   PREMIO / MEDALLA FINAL
+   =========================================================== */
+.medalla{text-align:center;padding:20px}
+.medalla .escudo{font-size:5rem;animation:late 1.2s ease-in-out infinite}
+@keyframes late{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+.medalla h3{font-family:var(--fuente-tit);color:var(--poncho);font-size:2rem;margin:6px}
+
+/* ===========================================================
+   ESCARAPELA SVG y mascota helpers
+   =========================================================== */
+.float-anim{animation:flota 4s ease-in-out infinite}
+@keyframes flota{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+
+/* ===========================================================
+   PIE
+   =========================================================== */
+.pie{background:var(--celeste-oscuro);color:#fff;text-align:center;padding:24px 16px;font-weight:700}
+.pie a{color:var(--sol)}
+.pie .mini{font-weight:600;opacity:.85;font-size:.85em;margin-top:6px}
+
+/* ===========================================================
+   CONFETI
+   =========================================================== */
+#confeti{position:fixed;inset:0;pointer-events:none;z-index:999;overflow:hidden}
+.conf{position:absolute;width:12px;height:18px;top:-20px;animation:caer linear forwards}
+@keyframes caer{to{transform:translateY(105vh) rotate(720deg)}}
+
+/* ===========================================================
+   MODO: TEXTO GRANDE
+   =========================================================== */
+body.texto-grande{--escala:1.28}
+
+/* ===========================================================
+   MODO: ALTO CONTRASTE
+   =========================================================== */
+body.contraste{
+  --crema:#000;--crema2:#111;--texto:#fff;--tierra:#FFE000;
+  --celeste:#00B7FF;--celeste-oscuro:#0090d8;--celeste-claro:#003c5c;
+  --poncho:#FF5A3C;--verde:#23d160;--sol:#FFD400;
+  background:#000;background-image:none;
+}
+body.contraste .juego,body.contraste .tile,body.contraste .info-card,
+body.contraste .pregunta-card,body.contraste .ig-post,body.contraste .cinta-ciclo,
+body.contraste .ch-col,body.contraste .evento,body.contraste .frase{
+  background:#111 !important;color:#fff !important;border-color:#FFD400 !important}
+body.contraste .info-card *,body.contraste .card-nav *{color:#fff}
+body.contraste .hero .cielo{background:#000}
+body.contraste .celda{background:#222;color:#fff}
+body.contraste *{text-shadow:none !important}
+
+/* ===========================================================
+   MODO: REDUCIR MOVIMIENTO
+   =========================================================== */
+body.calmo *,body.calmo *::before,body.calmo *::after{animation:none !important;transition:none !important}
+
+/* ===========================================================
+   RESPONSIVE
+   =========================================================== */
+@media(max-width:640px){
+  .opciones-vf,.opciones-mc,.ig-builder,.tablero-unir{grid-template-columns:1fr}
+  .barra-acc .marca span.txt{display:none}
+  .btn-acc span.lbl{display:none}
+  .btn-acc{padding:9px 12px}
+  .ficha,.casilla{width:48px;height:56px;font-size:1.6rem}
+  .cb{width:32px;height:32px;font-size:1rem}
+}
+@media(max-width:380px){
+  .grid-cards{grid-template-columns:1fr}
+}
+.oculto{display:none !important}
+.skip-link{position:absolute;left:-999px}
+.skip-link:focus{left:10px;top:10px;background:#fff;padding:8px 14px;border-radius:10px;z-index:999}
+</style>
+</head>
+<body>
+<a href="#main" class="skip-link">Saltar al contenido</a>
+
+<!-- ====================== BARRA ACCESIBILIDAD ====================== -->
+<header class="barra-acc" role="banner">
+  <div class="marca" onclick="ir('inicio')" role="button" tabindex="0" aria-label="Ir al inicio">
+    <svg class="escarapela" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="9" fill="#F6C544" stroke="#fff" stroke-width="2"/><g fill="#6CB6E3"><path d="M20 2l3 9h-6z"/><path d="M38 20l-9 3v-6z"/><path d="M20 38l-3-9h6z"/><path d="M2 20l9-3v6z"/><path d="M33 7l-5 8-3-4z"/><path d="M33 33l-8-5 4-3z"/><path d="M7 33l5-8 3 4z"/><path d="M7 7l8 5-4 3z"/></g></svg>
+    <span class="txt">¡A las cargas, Güemes!</span>
+  </div>
+  <button class="btn-acc" id="b-leer" onclick="toggleLectura()" aria-pressed="false" title="Leer en voz alta al tocar"><span class="ic">🔊</span><span class="lbl">Leer en voz alta</span></button>
+  <button class="btn-acc" id="b-texto" onclick="toggleClase('texto-grande','b-texto')" aria-pressed="false" title="Agrandar el texto"><span class="ic">🔠</span><span class="lbl">Texto grande</span></button>
+  <button class="btn-acc" id="b-contraste" onclick="toggleClase('contraste','b-contraste')" aria-pressed="false" title="Alto contraste"><span class="ic">◐</span><span class="lbl">Alto contraste</span></button>
+  <button class="btn-acc" id="b-calmo" onclick="toggleClase('calmo','b-calmo')" aria-pressed="false" title="Reducir movimiento"><span class="ic">🐢</span><span class="lbl">Modo calmo</span></button>
+</header>
+
+<main id="main">
+<!-- las vistas se inyectan acá -->
+<div id="vista-inicio" class="vista activa"></div>
+<div id="vista-menu" class="vista"></div>
+<div id="vista-juego" class="vista"></div>
+</main>
+
+<footer class="pie">
+  <div>🇦🇷 Plataforma educativa interactiva · <strong>17 de Junio – Martín Miguel de Güemes</strong></div>
+  <div class="mini">Material complementario para docentes de Nivel Primario. Pensado para acompañar el cuadernillo digital, no reemplazarlo.</div>
+</footer>
+
+<div id="confeti" aria-hidden="true"></div>
+
+<script src="app.js"></script>
+<script src="games.js"></script>
+</body>
+</html>
