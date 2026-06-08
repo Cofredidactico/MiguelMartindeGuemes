@@ -399,9 +399,9 @@ JUEGOS.cruci = z => {
     {n:5, w:'INFERNALES', spine:3, pista:'El ejército de gauchos de Güemes se llamaba los…'},
     {n:6, w:'SALTA',      spine:0, pista:'La provincia donde nació el general.'},
   ];
-  const espina='GÜEMES';
+  const espina='GUEMES';
   const maxSpine=Math.max(...filas.map(f=>f.spine));
-  const c=marco(z,'🧩 Crucigrama','Leé las pistas y completá. La columna amarilla forma GÜEMES (¡ya te la regalamos!).',
+  const c=marco(z,'🧩 Crucigrama','Leé las pistas y completá. La columna amarilla forma el apellido del general: G-U-E-M-E-S. ¡Ya te la regalamos!',
     `<div class="acrostico" id="ac"></div><button class="btn-grande azul" id="comp">✅ Comprobar</button>`);
   const ac=$('#ac',c);
   filas.forEach((f,fi)=>{
@@ -425,10 +425,11 @@ JUEGOS.cruci = z => {
   });
   $('#comp',c).onclick=()=>{
     let todo=true;
+    const norm=s=>s.toUpperCase().replace(/Ü/g,'U');
     filas.forEach((f,fi)=>{
       const inps=$$(`input.cb[data-f="${fi}"]`,ac);
-      const val=inps.map(x=>x.value.toUpperCase()).join('');
-      const ok=val===f.w;
+      const val=inps.map(x=>x.value).join('');
+      const ok=norm(val)===norm(f.w);
       inps.forEach(x=>x.classList.toggle('ok',ok));
       if(!ok) todo=false;
     });

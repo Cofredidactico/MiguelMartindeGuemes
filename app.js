@@ -209,10 +209,19 @@ function renderInicio(){
     <div class="cielo"></div>
     <div class="nube" style="width:120px;height:38px;top:30px;left:8%"></div>
     <div class="nube" style="width:90px;height:30px;top:70px;right:12%"></div>
+    <div class="cofre-marca" data-leer="Una creación de Cofre Didáctico">
+      <span class="pre">Una creación de</span>
+      <img src="logo-cofre.png" alt="Cofre Didáctico" class="cofre-logo">
+    </div>
     <div class="banderin" data-leer="17 de Junio. Paso a la inmortalidad de Martín Miguel de Güemes.">★ 17 DE JUNIO ★</div>
     <h1 data-leer="Martín Miguel de Güemes">MARTÍN MIGUEL<br><span>DE GÜEMES</span></h1>
     <p class="sub">Héroe de la Independencia Argentina · El defensor del Norte</p>
-    ${svgGaucho()}
+    <div class="hero-retrato">
+      <div class="hero-foto-marco">
+        <img src="guemes-portada.png" alt="Retrato de Martín Miguel de Güemes" class="hero-foto">
+      </div>
+      <span class="hero-placa">Martín Miguel de Güemes · 1785 – 1821</span>
+    </div>
     <p class="frase" data-leer="Defender la patria también es cuidar nuestra libertad.">🌟 «Defender la patria también es cuidar nuestra libertad» 🌟</p>
   </section>
 

@@ -461,6 +461,24 @@ body.calmo .guia-fig .mascota,body.calmo .final-historia .escudo-final,body.calm
 body.contraste .escena,body.contraste .globo{background:#000;border-color:var(--sol)}
 body.contraste .globo p,body.contraste .final-txt,body.contraste .guia-nombre,body.contraste .cap-tit{color:var(--sol)}
 body.contraste .hist-barra .hist-info{background:#000;color:var(--sol);border:2px solid var(--sol)}
+/* ===== Marca Cofre Didáctico + retrato de portada ===== */
+.cofre-marca{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:0;margin:0 auto 4px}
+.cofre-marca .pre{font-weight:800;color:var(--tierra);font-size:.8rem;letter-spacing:1px;text-transform:uppercase;opacity:.9}
+.cofre-logo{width:min(190px,48vw);filter:drop-shadow(0 4px 6px rgba(0,0,0,.16));margin-top:-4px}
+.hero-retrato{position:relative;z-index:2;margin:8px auto 2px;display:flex;flex-direction:column;align-items:center}
+.hero-foto-marco{position:relative;width:min(300px,66vw);aspect-ratio:4/5;border-radius:22px;overflow:hidden;
+  border:6px solid var(--sol);box-shadow:0 14px 24px rgba(0,0,0,.24);
+  background:radial-gradient(120% 90% at 50% 25%,var(--celeste-claro),#cfe9ff)}
+.hero-foto{width:100%;height:100%;object-fit:cover;object-position:50% 10%;display:block}
+.hero-placa{display:inline-block;margin-top:11px;background:var(--poncho);color:#fff;font-family:var(--fuente-tit);
+  font-weight:700;padding:5px 16px;border-radius:30px;font-size:.92rem;box-shadow:0 4px 0 var(--poncho-osc)}
+@media(max-width:380px){.cofre-logo{width:54vw}.hero-foto-marco{width:74vw}}
+
+/* ===== Crédito en el pie ===== */
+.pie-marca{display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:10px;flex-wrap:wrap}
+.pie-marca .pie-logo{width:120px;height:auto;background:rgba(255,255,255,.96);border-radius:16px;padding:6px}
+.pie-marca span{font-weight:700;max-width:360px;text-align:left}
+body.contraste .pie-marca .pie-logo{background:#fff}
 </style>
 </head>
 <body>
@@ -488,6 +506,10 @@ body.contraste .hist-barra .hist-info{background:#000;color:var(--sol);border:2p
 </main>
 
 <footer class="pie">
+  <div class="pie-marca">
+    <img src="logo-cofre.png" alt="Cofre Didáctico" class="pie-logo">
+    <span>Creado por <strong>Cofre Didáctico</strong> para abordar la vida de Martín Miguel de Güemes</span>
+  </div>
   <div>🇦🇷 Plataforma educativa interactiva · <strong>17 de Junio – Martín Miguel de Güemes</strong></div>
   <div class="mini">Material complementario para docentes de Nivel Primario. Pensado para acompañar el cuadernillo digital, no reemplazarlo.</div>
 </footer>
