@@ -4,7 +4,36 @@
    ===================================================================== */
 
 /* ---------- Estado global ---------- */
-const App = { ciclo:'pc', estrellas:0, lecturaOn:false, enHistoria:false, histPaso:0, musicaOn:false, letra:'normal' };
+const App = { ciclo:'pc', estrellas:0, lecturaOn:false, enHistoria:false, histPaso:0, musicaOn:false, letra:'normal',
+              completados:new Set(), medallas:new Set(), nombre:'', juegoActual:'', historiaCompleta:false };
+
+/* ---------- Guardado de progreso (funciona en GitHub Pages / archivo local) ---------- */
+const STORE_KEY = 'cofre_guemes_v1';
+function cargarEstado(){
+  try{
+    const s = JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
+    App.estrellas = s.estrellas || 0;
+    App.completados = new Set(s.completados || []);
+    App.medallas = new Set(s.medallas || []);
+    App.nombre = s.nombre || '';
+    App.historiaCompleta = !!s.historiaCompleta;
+  }catch(e){ /* almacenamiento no disponible: seguimos sin guardar */ }
+}
+function guardarEstado(){
+  try{
+    localStorage.setItem(STORE_KEY, JSON.stringify({
+      estrellas: App.estrellas,
+      completados: [...App.completados],
+      medallas: [...App.medallas],
+      nombre: App.nombre,
+      historiaCompleta: App.historiaCompleta
+    }));
+  }catch(e){}
+}
+function reiniciarProgreso(){
+  App.estrellas=0; App.completados=new Set(); App.medallas=new Set(); App.historiaCompleta=false;
+  guardarEstado();
+}
 
 /* ---------- Utilidades ---------- */
 const $ = (s,c=document)=>c.querySelector(s);
@@ -141,6 +170,43 @@ function confeti(n=80){
 function sumarEstrella(n=1){
   App.estrellas+=n;
   const cont=$('#estrellas-cont'); if(cont) cont.textContent=App.estrellas;
+  guardarEstado();
+}
+
+/* ---------- Medallas coleccionables ---------- */
+const MEDALLAS = [
+  {id:'escarapela', em:'🎗️', nom:'Escarapela',        desc:'Completá tu primer juego.',          n:1},
+  {id:'poncho',     em:'🧣', nom:'Poncho gaucho',      desc:'Completá 3 juegos.',                 n:3},
+  {id:'sombrero',   em:'🤠', nom:'Sombrero de gaucho', desc:'Completá 5 juegos.',                 n:5},
+  {id:'sable',      em:'⚔️', nom:'Sable de Güemes',    desc:'Completá 8 juegos.',                 n:8},
+  {id:'bandera',    em:'🇦🇷', nom:'Bandera patria',     desc:'Completá 12 juegos.',                n:12},
+  {id:'heroe',      em:'🏅', nom:'Héroe del Norte',    desc:'Terminá el Modo Historia completo.', historia:true},
+];
+function completarJuego(id){
+  if(!id) return;
+  const nuevo = !App.completados.has(id);
+  App.completados.add(id);
+  if(nuevo) guardarEstado();
+  revisarMedallas();
+}
+function revisarMedallas(){
+  const total = App.completados.size;
+  MEDALLAS.forEach(m=>{
+    if(App.medallas.has(m.id)) return;
+    const gana = m.historia ? App.historiaCompleta : (total >= m.n);
+    if(gana){ App.medallas.add(m.id); guardarEstado(); mostrarMedalla(m); }
+  });
+}
+function mostrarMedalla(m){
+  confeti(120); sonBien();
+  let t=$('#medalla-toast');
+  if(!t){ t=document.createElement('div'); t.id='medalla-toast'; document.body.appendChild(t); }
+  t.innerHTML = `<span class="mt-em">${m.em}</span>
+    <span class="mt-txt"><strong>¡Ganaste una medalla!</strong><br>${m.nom}</span>`;
+  t.classList.add('show');
+  if(App.lecturaOn) decirSiempre('¡Ganaste la medalla '+m.nom+'!');
+  clearTimeout(mostrarMedalla._t);
+  mostrarMedalla._t=setTimeout(()=>t.classList.remove('show'), 3600);
 }
 
 /* =====================================================================
@@ -283,6 +349,8 @@ function renderInicio(){
 
     </div>
 
+    ${panelProgreso()}
+
     <h2 class="titulo-seccion">👩‍🏫 Para el aula</h2>
     <p class="bajada">Cada sección reúne juegos inspirados en Genially, Wordwall, Kahoot, Educaplay y Baamboozle, pensados como complemento del cuadernillo digital. Todo funciona sin instalar nada, en celular, tablet o computadora.</p>
     <div class="grid-cards">
@@ -299,6 +367,96 @@ function renderInicio(){
   </div>`;
 }
 
+/* ---------- Panel de progreso (portada) ---------- */
+function panelProgreso(){
+  const total=totalJuegos();
+  const comp=App.completados.size;
+  const pct = total ? Math.round(comp/total*100) : 0;
+  return `
+  <div class="panel-prog">
+    <div class="pp-info">
+      <h3>🏆 Mi progreso</h3>
+      <div class="pp-barra"><div class="pp-fill" style="width:${pct}%"></div></div>
+      <small>${comp} de ${total} juegos · ⭐ ${App.estrellas} estrellas · 🏅 ${App.medallas.size}/${MEDALLAS.length} medallas</small>
+    </div>
+    <div class="pp-botones">
+      <button class="btn-grande azul" onclick="renderMedallas()">🏅 Mis medallas</button>
+      <button class="btn-grande" onclick="renderDiploma()">📜 Mi diploma</button>
+    </div>
+  </div>`;
+}
+
+/* ---------- Vitrina de medallas ---------- */
+function renderMedallas(){
+  sonClick();
+  const cards=MEDALLAS.map(m=>{
+    const ok=App.medallas.has(m.id);
+    return `<div class="medalla-card ${ok?'ganada':'bloqueada'}" data-leer="${m.nom}. ${ok?'Ganada':'Bloqueada'}. ${m.desc}">
+      <div class="mc-em">${ok?m.em:'🔒'}</div>
+      <h4>${m.nom}</h4>
+      <small>${m.desc}</small>
+      <span class="mc-estado">${ok?'¡Ganada! ✅':'Bloqueada'}</span>
+    </div>`;
+  }).join('');
+  $('#vista-juego').innerHTML=`<div class="wrap">
+    <div style="text-align:center;margin:6px 0 12px"><button class="btn-volver" onclick="irInicio()">⟵ Inicio</button></div>
+    <div class="juego">
+      <h2 data-leer="Mis medallas">🏅 Mis medallas</h2>
+      <p class="consigna">Ganá medallas completando juegos y la aventura. ¡Coleccionalas todas!</p>
+      <div class="medallas-grid">${cards}</div>
+    </div></div>`;
+  ir('juego');
+  if(App.lecturaOn) decir('Mis medallas. Llevás '+App.medallas.size+' de '+MEDALLAS.length+'.');
+}
+
+/* ---------- Diploma imprimible ---------- */
+function renderDiploma(){
+  sonClick();
+  const fecha=new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'});
+  $('#vista-juego').innerHTML=`<div class="wrap">
+    <div class="no-print" style="text-align:center;margin:6px 0 12px"><button class="btn-volver" onclick="irInicio()">⟵ Inicio</button></div>
+    <div class="juego">
+      <h2 class="no-print" data-leer="Mi diploma">📜 Mi diploma</h2>
+      <p class="consigna no-print">Escribí tu nombre y creá tu diploma para imprimir o guardar en PDF.</p>
+      <div class="dip-form no-print">
+        <input id="dip-nombre" maxlength="40" placeholder="Escribí tu nombre y apellido" value="${(App.nombre||'').replace(/"/g,'&quot;')}">
+        <button class="btn-grande" id="dip-gen">✨ Crear diploma</button>
+      </div>
+      <div id="dip-zona"></div>
+    </div></div>`;
+  ir('juego');
+  const pintar=()=>{
+    const val=($('#dip-nombre')?($('#dip-nombre').value||''):'').trim();
+    App.nombre=val; guardarEstado();
+    const nom = val || 'Gaucho/a de la Libertad';
+    const medGan=MEDALLAS.filter(m=>App.medallas.has(m.id)).length;
+    $('#dip-zona').innerHTML=`
+      <div class="diploma" id="diploma">
+        <div class="dip-marco">
+          <img src="logo-cofre.png" class="dip-logo" alt="Cofre Didáctico">
+          <div class="dip-cinta">🇦🇷 17 de Junio · Día de Martín Miguel de Güemes</div>
+          <h3 class="dip-titulo">Diploma de Gaucho/a de Güemes</h3>
+          <p class="dip-otorga">Se otorga con orgullo a</p>
+          <p class="dip-nombre">${nom}</p>
+          <p class="dip-texto">por recorrer con valentía la vida de Martín Miguel de Güemes, héroe de la Independencia Argentina, y demostrar amor por la patria, la libertad y la identidad de nuestro pueblo.</p>
+          <div class="dip-pie">
+            <div class="dip-col"><img src="guemes-portada.png" class="dip-retrato" alt="Güemes"><span>Martín M. de Güemes</span></div>
+            <div class="dip-sello">⭐ ${App.estrellas}<br><small>estrellas</small></div>
+            <div class="dip-col"><img src="logo-cofre.png" class="dip-firma-logo" alt=""><span>Cofre Didáctico</span></div>
+          </div>
+          <p class="dip-fecha">Otorgado el ${fecha} · ${medGan} medallas conseguidas</p>
+        </div>
+      </div>
+      <div class="no-print" style="text-align:center;margin-top:14px">
+        <button class="btn-grande azul" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+      </div>`;
+    confeti(80); sonBien();
+    if(App.lecturaOn) decir('¡Tu diploma está listo, '+nom+'!');
+  };
+  if($('#dip-gen')) $('#dip-gen').onclick=pintar;
+  if(App.nombre) pintar();
+}
+
 /* =====================================================================
    MENÚ DE JUEGOS POR CICLO
    ===================================================================== */
@@ -307,6 +465,7 @@ const MENUS = {
     desc:'Tocá un juego para empezar. ¡Vas a ganar estrellas! ⭐',
     juegos:[
       {id:'info_pc', ic:'🔎', t:'Conocé a Güemes', s:'Infografía interactiva', tag:'Explorar'},
+      {id:'glosario', ic:'📖', t:'Glosario ilustrado', s:'Palabras clave con imagen y audio', tag:'Palabras'},
       {id:'vf_pc', ic:'✅', t:'¿Verdadero o Falso?', s:'Tocá la respuesta correcta', tag:'Quiz'},
       {id:'anagrama', ic:'🔤', t:'Ordená las letras', s:'Descubrí la palabra escondida', tag:'Letras'},
       {id:'unir', ic:'🔗', t:'Unir con su palabra', s:'Imagen + palabra', tag:'Memoria'},
@@ -319,6 +478,7 @@ const MENUS = {
     desc:'Desafíos para pensar y aprender. Sumá estrellas resolviendo cada uno. ⭐',
     juegos:[
       {id:'info_sc', ic:'📖', t:'Güemes en detalle', s:'Infografía + cita histórica', tag:'Explorar'},
+      {id:'glosario', ic:'📖', t:'Glosario ilustrado', s:'Palabras clave con imagen y audio', tag:'Palabras'},
       {id:'vf_sc', ic:'⚖️', t:'V o F con justificación', s:'Pensá tu respuesta', tag:'Quiz'},
       {id:'acertijos', ic:'🕵️', t:'Los acertijos de Güemes', s:'Adiviná de quién se trata', tag:'Pistas'},
       {id:'tiempo', ic:'📅', t:'Línea de tiempo', s:'Ordená los hechos por año', tag:'Ordenar'},
@@ -331,6 +491,7 @@ const MENUS = {
     desc:'Actividades cortas, con pictogramas, mucho apoyo y festejo en cada acierto. 💚 Se recomienda activar 🔊 «Leer en voz alta».',
     juegos:[
       {id:'mirar', ic:'👀', t:'Mirá y escuchá', s:'Conocé a Güemes paso a paso', tag:'Mirar'},
+      {id:'glosario', ic:'📖', t:'Glosario', s:'Palabras con imagen y voz', tag:'Palabras'},
       {id:'vf_facil', ic:'👍', t:'¿Sí o No?', s:'Dos opciones grandes', tag:'Elegir'},
       {id:'unir_facil', ic:'🧲', t:'Unir parejas', s:'Solo 3 parejas', tag:'Unir'},
       {id:'sec_facil', ic:'1️⃣', t:'Primero y después', s:'Ordená 3 momentos', tag:'Ordenar'},
@@ -340,6 +501,7 @@ const MENUS = {
     desc:'Esta sección está pensada para escuchar. Activá 🔊 «Leer en voz alta» y, si querés, «Texto grande» y «Alto contraste» en la barra de arriba.',
     juegos:[
       {id:'audio', ic:'🎧', t:'La historia narrada', s:'Escuchá la vida de Güemes', tag:'Audio'},
+      {id:'glosario', ic:'📖', t:'Glosario hablado', s:'Palabras con imagen y voz', tag:'Palabras'},
       {id:'vf_audio', ic:'✅', t:'Quiz para escuchar', s:'Pregunta leída en voz alta', tag:'Audio'},
       {id:'audio_tiempo', ic:'📅', t:'Línea de tiempo hablada', s:'Cada hecho se lee solo', tag:'Audio'},
     ]},
@@ -360,7 +522,7 @@ function abrirCiclo(ciclo){
   $('#vista-menu').innerHTML = `
   <div class="wrap">
     <div style="text-align:center;margin:6px 0 18px">
-      <button class="btn-volver" onclick="ir('inicio')">⟵ Inicio</button>
+      <button class="btn-volver" onclick="irInicio()">⟵ Inicio</button>
     </div>
     <div class="cinta-ciclo">
       <span class="lbl">${m.titulo}</span>
@@ -377,7 +539,7 @@ function abrirCiclo(ciclo){
    DISPATCHER DE JUEGOS  (las funciones viven en games.js)
    ===================================================================== */
 function abrirJuego(id){
-  sonClick(); App.enHistoria=false;
+  sonClick(); App.enHistoria=false; App.juegoActual=id;
   const cont=$('#vista-juego');
   const fn = JUEGOS[id];
   if(!fn){ cont.innerHTML='<div class="wrap"><div class="juego"><h2>Próximamente</h2></div></div>'; ir('juego'); return; }
@@ -399,13 +561,14 @@ function btnLeer(texto){
 
 /* ---------- Regreso tras un juego (sabe si estás en la aventura) ---------- */
 function finJuego(){
+  completarJuego(App.juegoActual);
   if(App.enHistoria) avanzarHistoria();
   else abrirCiclo(App.ciclo);
 }
 
 /* ---------- Medalla final reutilizable ---------- */
 function medallaFinal(zona,msg,onContinuar){
-  confeti(120); sonBien(); sumarEstrella();
+  confeti(120); sonBien(); sumarEstrella(); completarJuego(App.juegoActual);
   const enH=App.enHistoria;
   zona.innerHTML = `<div class="juego"><div class="medalla">
     <div class="escudo">🏅</div>
@@ -538,6 +701,7 @@ function renderCapitulo(i){
 function jugarMision(i){
   sonClick();
   const cap=CAPITULOS[i];
+  App.juegoActual=cap.juego;
   const fn=JUEGOS[cap.juego];
   $('#vista-juego').innerHTML = `<div class="wrap">
     <div class="hist-barra">
@@ -559,10 +723,11 @@ function avanzarHistoria(){
   else renderCapitulo(sig);
 }
 
-function salirHistoria(){ App.enHistoria=false; cancelarVoz(); ir('inicio'); }
+function salirHistoria(){ App.enHistoria=false; cancelarVoz(); irInicio(); }
 
 function renderFinalHistoria(){
   confeti(180); sonBien(); sumarEstrella(2);
+  App.historiaCompleta=true; guardarEstado(); revisarMedallas();
   $('#vista-historia').innerHTML = `
   <div class="wrap">
     <div class="escena final-historia">
@@ -590,6 +755,14 @@ function renderFinalHistoria(){
 /* =====================================================================
    ARRANQUE
    ===================================================================== */
-renderInicio();
+function irInicio(){ renderInicio(); ir('inicio'); }
+function totalJuegos(){ return (typeof JUEGOS!=='undefined') ? Object.keys(JUEGOS).length : 0; }
+
+function boot(){
+  cargarEstado();
+  renderInicio();
+}
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot);
+else boot();
 // pequeña ayuda: si las voces tardan, recargar
 setTimeout(cargarVoz,600);

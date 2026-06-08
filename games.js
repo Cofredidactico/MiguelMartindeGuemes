@@ -598,7 +598,7 @@ JUEGOS.instagram = z => {
     const tags=$('#tags',c).value.trim();
     $('#igcap',c).innerHTML=`<b>general.guemes</b> ${cap} ${tags?`<span style="color:#2E6FA6">${tags}</span>`:''}`;
     $('#igimg',c).innerHTML=vis(em);
-    sonBien(); confeti(60); sumarEstrella();
+    sonBien(); confeti(60); sumarEstrella(); completarJuego(App.juegoActual);
     $('#iglikes',c).textContent='Les gusta a macacha.guemes y 18.210 personas más';
     if(App.lecturaOn) decir('Publicación creada. '+cap);
     const sc=$('#estrellas-cont'); if(sc) sc.textContent=App.estrellas;
@@ -734,4 +734,29 @@ JUEGOS.audio_tiempo = z => {
       </button>`).join('')}</div>
       <button class="btn-grande" onclick="finJuego()">✅ ¡Listo!</button>`);
   window._lt=i=>{ sonClick(); decirSiempre('En '+TIMELINE[i].a+', '+TIMELINE[i].t); };
+};
+
+/* =====================================================================
+   GLOSARIO ILUSTRADO  ·  palabras clave con imagen + audio
+   ===================================================================== */
+const GLOSARIO = [
+  {em:'🐴', w:'Caballo',        d:'El fiel compañero del gaucho. Les permitía moverse rápido por los caminos del norte.'},
+  {em:'🧣', w:'Poncho',         d:'Abrigo de lana que usaban los gauchos. Los protegía del frío y del sol.'},
+  {em:'🏔️', w:'Salta',          d:'La provincia del norte argentino donde nació Güemes, el 8 de febrero de 1785.'},
+  {em:'🤠', w:'Gaucho',         d:'Hombre de campo y gran jinete. Los Gauchos Infernales lucharon junto a Güemes.'},
+  {em:'⚔️', w:'Guerra Gaucha',  d:'Forma de luchar con ataques sorpresa y emboscadas, aprovechando el terreno del norte.'},
+  {em:'👑', w:'Realistas',      d:'Los soldados que peleaban por el rey de España y querían dominar estas tierras.'},
+  {em:'🗺️', w:'Alto Perú',      d:'Región del norte (hoy Bolivia) desde donde avanzaban los realistas.'},
+  {em:'💌', w:'Macacha',        d:'La hermana de Güemes. Ayudaba llevando mensajes e información a los patriotas.'},
+];
+JUEGOS.glosario = z => {
+  const c=marco(z,'📖 Glosario ilustrado','Tocá cada palabra para ver la imagen y escuchar qué significa.',
+    `<div class="info-grid">${GLOSARIO.map((g,i)=>`
+       <button class="info-card c-azul glos-card" onclick="window._glos(${i})" data-leer="${g.w}. ${g.d}">
+         <div class="glos-fig">${vis(g.em)}</div>
+         <div class="tit">${g.w}</div>
+         <div class="glos-def" id="gd${i}">${g.d}</div>
+       </button>`).join('')}</div>
+     <button class="btn-grande" onclick="finJuego()">✅ ¡Listo, aprendí las palabras!</button>`);
+  window._glos=i=>{ sonClick(); const card=$$('.glos-card',c)[i]; if(card) card.classList.toggle('abierta'); decirSiempre(GLOSARIO[i].w+'. '+GLOSARIO[i].d); };
 };
