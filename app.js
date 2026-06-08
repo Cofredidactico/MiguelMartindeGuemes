@@ -4,7 +4,7 @@
    ===================================================================== */
 
 /* ---------- Estado global ---------- */
-const App = { ciclo:'pc', estrellas:0, lecturaOn:false };
+const App = { ciclo:'pc', estrellas:0, lecturaOn:false, enHistoria:false, histPaso:0, musicaOn:false };
 
 /* ---------- Utilidades ---------- */
 const $ = (s,c=document)=>c.querySelector(s);
@@ -71,6 +71,45 @@ function beep(freq,dur=.15,tipo='sine',vol=.18){
 const sonBien=()=>{beep(660,.12,'triangle');setTimeout(()=>beep(880,.18,'triangle'),110);};
 const sonMal =()=>{beep(200,.22,'sawtooth',.14);};
 const sonClick=()=>beep(520,.06,'square',.08);
+
+/* ---------- Música ambiente folklórica (generada, sin derechos) ----------
+   Progresión suave en compás de 6/8 (aire de zamba norteña): Am · F · C · G.
+   Se sintetiza con osciladores: bajo + bombo en los tiempos fuertes y un
+   arpegio tipo guitarra criolla. Volumen bajo para no molestar en el aula. */
+const ACORDES = [
+  [110.00,[220.00,261.63,329.63]], // Am
+  [ 87.31,[174.61,220.00,261.63]], // F
+  [130.81,[196.00,261.63,329.63]], // C
+  [ 98.00,[196.00,246.94,293.66]], // G
+];
+const musica = { timer:null, s:0 };
+function tickMusica(){
+  if(!App.musicaOn) return;
+  const ch = ACORDES[Math.floor(musica.s/6)%ACORDES.length];
+  const sb = musica.s % 6;                 // paso dentro del compás (6/8)
+  if(sb===0 || sb===3){                    // tiempos fuertes: bajo + bombo
+    beep(ch[0], .55, 'sine', .085);
+    beep(58, .16, 'triangle', .10);
+  }
+  if(sb!==0){                              // arpegio de guitarra
+    beep(ch[1][sb % ch[1].length], .42, 'triangle', .045);
+  }
+  musica.s++;
+}
+function toggleMusica(){
+  App.musicaOn = !App.musicaOn;
+  const b=$('#b-musica');
+  if(b){ b.classList.toggle('activo',App.musicaOn); b.setAttribute('aria-pressed',App.musicaOn); }
+  if(App.musicaOn){
+    try{ actx=actx||new(window.AudioContext||window.webkitAudioContext)(); if(actx.state==='suspended') actx.resume(); }catch(e){}
+    musica.s=0;
+    clearInterval(musica.timer);
+    musica.timer=setInterval(tickMusica, 300);   // ~corchea
+    decir('Música encendida');
+  }else{
+    clearInterval(musica.timer); musica.timer=null;
+  }
+}
 
 function confeti(n=80){
   const cols=['#6CB6E3','#F6C544','#C0392B','#4FA56B','#fff','#E29B27'];
@@ -180,6 +219,16 @@ function renderInicio(){
   <div class="wrap">
     <h2 class="titulo-seccion">🎮 ¡Elegí tu aventura!</h2>
     <p class="bajada">Una plataforma para aprender jugando sobre Güemes, los Gauchos Infernales y la Guerra Gaucha. Elegí por dónde empezar:</p>
+
+    <button class="banner-historia" onclick="abrirHistoria()" data-leer="Modo Historia. Una aventura narrada por Güemes y su hermana Macacha, con misiones de juego.">
+      <span class="bh-ic">📖</span>
+      <span class="bh-txt">
+        <strong>Modo Historia: La aventura de Güemes</strong>
+        <small>Recorré su vida con Macacha y Güemes como guías. ¡6 misiones para completar! ▶</small>
+      </span>
+      <span class="bh-fig">${svgMacacha()}</span>
+    </button>
+
     <div class="grid-cards">
 
       <button class="card-nav c-azul" onclick="abrirCiclo('pc')" data-leer="Primer Ciclo. Primero, segundo y tercer grado. Juegos para los más chicos.">
@@ -275,7 +324,7 @@ const MENUS = {
 };
 
 function abrirCiclo(ciclo){
-  App.ciclo=ciclo; sonClick();
+  App.ciclo=ciclo; App.enHistoria=false; sonClick();
   const m=MENUS[ciclo];
   // sugerencias de accesibilidad automáticas
   if(ciclo==='av' && !App.lecturaOn) toggleLectura();
@@ -306,7 +355,7 @@ function abrirCiclo(ciclo){
    DISPATCHER DE JUEGOS  (las funciones viven en games.js)
    ===================================================================== */
 function abrirJuego(id){
-  sonClick();
+  sonClick(); App.enHistoria=false;
   const cont=$('#vista-juego');
   const fn = JUEGOS[id];
   if(!fn){ cont.innerHTML='<div class="wrap"><div class="juego"><h2>Próximamente</h2></div></div>'; ir('juego'); return; }
@@ -326,15 +375,22 @@ function btnLeer(texto){
   return `<button class="btn-leer" onclick='decirSiempre(${JSON.stringify(texto)})'>🔊 Escuchar</button>`;
 }
 
+/* ---------- Regreso tras un juego (sabe si estás en la aventura) ---------- */
+function finJuego(){
+  if(App.enHistoria) avanzarHistoria();
+  else abrirCiclo(App.ciclo);
+}
+
 /* ---------- Medalla final reutilizable ---------- */
 function medallaFinal(zona,msg,onContinuar){
-  confeti(120); sonBien();
+  confeti(120); sonBien(); sumarEstrella();
+  const enH=App.enHistoria;
   zona.innerHTML = `<div class="juego"><div class="medalla">
     <div class="escudo">🏅</div>
     <h3>¡Excelente trabajo!</h3>
     <p style="font-weight:800;color:var(--tierra);max-width:520px;margin:8px auto" data-leer="${msg.replace(/"/g,'')}">${msg}</p>
     ${btnLeer(msg)}
-    <button class="btn-grande" onclick="abrirCiclo('${App.ciclo}')">🎮 Jugar otra cosa</button>
+    <button class="btn-grande" onclick="finJuego()">${enH?'▶ Seguir la aventura':'🎮 Jugar otra cosa'}</button>
   </div></div>`;
   if(App.lecturaOn) decirSiempre('¡Excelente trabajo! '+msg);
 }
@@ -363,6 +419,149 @@ function svgGaucho(){
     <path d="M153 60 h40 v8 h-40z" fill="#6CB6E3"/>
     <circle cx="173" cy="55" r="4" fill="#F6C544"/>
   </svg>`;
+}
+
+/* ---------- SVG Macacha Güemes (co-guía de la aventura) ---------- */
+function svgMacacha(){
+  return `<svg class="mascota" viewBox="0 0 160 200" xmlns="http://www.w3.org/2000/svg" aria-label="Ilustración de Macacha Güemes">
+    <ellipse cx="80" cy="190" rx="48" ry="9" fill="rgba(0,0,0,.12)"/>
+    <!-- vestido / rebozo -->
+    <path d="M80 80 q34 4 40 50 q4 30-6 56 l-68 0 q-10-26-6-56 q6-46 40-50z" fill="#C0392B"/>
+    <path d="M80 80 q-22 6-30 40 l60 0 q-8-34-30-40z" fill="#6CB6E3"/>
+    <path d="M52 132 l56 0 -4 16 -48 0z" fill="#F6C544"/>
+    <!-- cuello/cara -->
+    <rect x="73" y="66" width="14" height="16" rx="5" fill="#e9b486"/>
+    <circle cx="80" cy="52" r="20" fill="#f0c9a0"/>
+    <!-- pelo recogido -->
+    <path d="M58 50 q-2-26 22-28 q24 2 22 28 q-6-12-22-12 q-16 0-22 12z" fill="#3a2a1a"/>
+    <path d="M60 48 q20-10 40 0 q2 8-2 12 q-18-8-36 0 q-4-4-2-12z" fill="#2a1c10"/>
+    <ellipse cx="80" cy="34" rx="8" ry="6" fill="#3a2a1a"/>
+    <!-- ojos / sonrisa -->
+    <circle cx="73" cy="52" r="2.4" fill="#2a1c10"/>
+    <circle cx="87" cy="52" r="2.4" fill="#2a1c10"/>
+    <path d="M73 60 q7 6 14 0" stroke="#b5651d" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <circle cx="68" cy="57" r="3" fill="#f4a9a0" opacity=".6"/>
+    <circle cx="92" cy="57" r="3" fill="#f4a9a0" opacity=".6"/>
+    <!-- carta/mensaje en la mano (fue mensajera de los patriotas) -->
+    <g transform="rotate(-12 120 150)"><rect x="108" y="138" width="26" height="20" rx="2" fill="#FFF8EC" stroke="#8B5E3C" stroke-width="1.5"/><path d="M108 138l13 9 13-9" fill="none" stroke="#8B5E3C" stroke-width="1.5"/></g>
+  </svg>`;
+}
+
+/* =====================================================================
+   MODO HISTORIA  ·  aventura narrada por Güemes y Macacha
+   ===================================================================== */
+const CAPITULOS = [
+  { anio:'1785', tit:'Nace un niño en Salta', guia:'macacha',
+    narr:'¡Hola! Soy Macacha Güemes. Te invito a conocer la vida de mi hermano Martín. Todo comenzó el 8 de febrero de 1785, cuando nació en la hermosa provincia de Salta, en el norte argentino.',
+    juego:'info_pc', cta:'Conocé quién fue Güemes 🔎' },
+  { anio:'1806 – 1807', tit:'Las Invasiones Inglesas', guia:'guemes',
+    narr:'¡Soy Martín Miguel de Güemes! Desde muy joven me sumé al ejército. En 1806 y 1807 ayudé a defender estas tierras durante las Invasiones Inglesas. ¡Demostrá lo que aprendiste ordenando estas palabras secretas!',
+    juego:'anagrama', cta:'Ordená las palabras 🔤' },
+  { anio:'1810', tit:'La Revolución de Mayo', guia:'macacha',
+    narr:'En 1810 ocurrió la Revolución de Mayo y el sueño de la libertad creció con fuerza. Martín se sumó de lleno a la lucha por la independencia. ¿Podés ordenar los momentos de su vida?',
+    juego:'secuencia', cta:'Ordená la secuencia 🪜' },
+  { anio:'La Guerra Gaucha', tit:'Los Gauchos Infernales', guia:'guemes',
+    narr:'Formé un ejército de gauchos valientes: ¡los Gauchos Infernales! Con poncho y a caballo, conocíamos cada camino del norte. Atacábamos por sorpresa: a eso le llamaban la «Guerra Gaucha». Encontrá las palabras escondidas.',
+    juego:'sopa_pc', cta:'Buscá las palabras 🔍' },
+  { anio:'1815', tit:'Gobernador de Salta', guia:'macacha',
+    narr:'En 1815, Martín fue elegido gobernador de Salta. Desde allí organizó la defensa del norte y frenó a los realistas que querían avanzar desde el Alto Perú. ¿Resolvés estos acertijos?',
+    juego:'acertijos', cta:'Resolvé los acertijos 🕵️' },
+  { anio:'17 de junio de 1821', tit:'Paso a la inmortalidad', guia:'guemes',
+    narr:'El 7 de junio de 1821 fui herido en una emboscada. El 17 de junio partí, defendiendo siempre la libertad de mi patria. Pero mi historia sigue viva en cada uno de ustedes. Completá este crucigrama para cerrar nuestra aventura.',
+    juego:'cruci', cta:'Completá el crucigrama 🧩' },
+];
+
+function abrirHistoria(){
+  App.enHistoria=true; App.histPaso=0; sonClick();
+  renderCapitulo(0);
+}
+
+function puntosProgreso(activo){
+  return `<div class="hist-prog" aria-hidden="true">${
+    CAPITULOS.map((_,i)=>`<span class="pp ${i<activo?'hecho':''} ${i===activo?'actual':''}"></span>`).join('')
+  }</div>`;
+}
+
+function renderCapitulo(i){
+  App.histPaso=i;
+  const cap=CAPITULOS[i];
+  const fig = cap.guia==='macacha' ? svgMacacha() : svgGaucho();
+  const nombre = cap.guia==='macacha' ? 'Macacha' : 'Güemes';
+  $('#vista-historia').innerHTML = `
+  <div class="wrap">
+    <div class="hist-barra">
+      <button class="btn-volver" onclick="salirHistoria()">⟵ Salir</button>
+      <span class="hist-info">Misión ${i+1} de ${CAPITULOS.length}</span>
+      <span class="chip estrella">⭐ <span id="estrellas-cont">${App.estrellas}</span></span>
+    </div>
+    ${puntosProgreso(i)}
+    <div class="escena">
+      <span class="cap-anio">📅 ${cap.anio}</span>
+      <h2 class="cap-tit" data-leer="${cap.tit}">${cap.tit}</h2>
+      <div class="escena-fila">
+        <div class="guia-fig guia-${cap.guia}">${fig}<span class="guia-nombre">${nombre}</span></div>
+        <div class="globo" data-leer="${cap.narr.replace(/"/g,'')}">
+          <p>${cap.narr}</p>
+          ${btnLeer(cap.narr)}
+        </div>
+      </div>
+      <button class="btn-grande btn-mision" onclick="jugarMision(${i})">▶ ${cap.cta}</button>
+    </div>
+  </div>`;
+  ir('historia');
+  if(App.lecturaOn) decirSiempre(cap.tit+'. '+cap.narr);
+}
+
+function jugarMision(i){
+  sonClick();
+  const cap=CAPITULOS[i];
+  const fn=JUEGOS[cap.juego];
+  $('#vista-juego').innerHTML = `<div class="wrap">
+    <div class="hist-barra">
+      <button class="btn-volver" onclick="renderCapitulo(${i})">⟵ Volver al relato</button>
+      <span class="hist-info">Misión ${i+1} de ${CAPITULOS.length}</span>
+      <span class="chip estrella">⭐ <span id="estrellas-cont">${App.estrellas}</span></span>
+      <button class="btn-volver btn-sig" onclick="avanzarHistoria()">Siguiente ▶</button>
+    </div>
+    <div id="zona-juego"></div>
+  </div>`;
+  ir('juego');
+  if(fn) fn($('#zona-juego'));
+  else $('#zona-juego').innerHTML='<div class="juego"><h2>Próximamente</h2></div>';
+}
+
+function avanzarHistoria(){
+  const sig=App.histPaso+1;
+  if(sig>=CAPITULOS.length) renderFinalHistoria();
+  else renderCapitulo(sig);
+}
+
+function salirHistoria(){ App.enHistoria=false; cancelarVoz(); ir('inicio'); }
+
+function renderFinalHistoria(){
+  confeti(180); sonBien(); sumarEstrella(2);
+  $('#vista-historia').innerHTML = `
+  <div class="wrap">
+    <div class="escena final-historia">
+      <div class="escudo-final">🏅</div>
+      <h2 data-leer="¡Completaste la aventura de Güemes!">¡Completaste la aventura! 🎉</h2>
+      <p class="final-txt" data-leer="Recorriste toda la vida de Martín Miguel de Güemes, desde que nació en Salta hasta su paso a la inmortalidad el 17 de junio. ¡Gracias por acompañarnos! Sos un verdadero gaucho o gaucha de la libertad.">
+        Recorriste toda la vida de <strong>Martín Miguel de Güemes</strong>, desde que nació en Salta hasta su paso a la inmortalidad el 17 de junio. ¡Sos un verdadero gaucho o gaucha de la libertad! 🇦🇷
+      </p>
+      <div class="escena-fila" style="justify-content:center">
+        <div class="guia-fig guia-guemes">${svgGaucho()}<span class="guia-nombre">Güemes</span></div>
+        <div class="guia-fig guia-macacha">${svgMacacha()}<span class="guia-nombre">Macacha</span></div>
+      </div>
+      ${btnLeer('¡Completaste la aventura de Güemes! Sos un verdadero gaucho o gaucha de la libertad.')}
+      <div style="margin-top:14px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
+        <button class="btn-grande" onclick="abrirHistoria()">🔁 Vivirla de nuevo</button>
+        <button class="btn-grande" style="background:var(--tierra)" onclick="salirHistoria()">🏠 Volver al inicio</button>
+      </div>
+    </div>
+  </div>`;
+  ir('historia');
+  App.enHistoria=false;
+  if(App.lecturaOn) decirSiempre('¡Completaste la aventura de Güemes! Sos un verdadero gaucho o gaucha de la libertad.');
 }
 
 /* =====================================================================

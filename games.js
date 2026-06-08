@@ -26,7 +26,7 @@ function infografia(zona, datos, titulo, cita){
   const citaHtml = cita ? `<div class="cita-guemes" data-leer="${cita.replace(/"/g,'')}">«${cita}»<small>— Martín Miguel de Güemes</small></div>` : '';
   const c = marco(zona, titulo, 'Tocá cada tarjeta para descubrir la historia de Güemes. ¡Activá el 🔊 para escucharla!',
     `<div class="info-grid">${cards}${citaHtml}</div>
-     <button class="btn-grande" onclick="abrirCiclo('${App.ciclo}')">✅ ¡Listo, aprendí mucho!</button>`);
+     <button class="btn-grande" onclick="finJuego()">✅ ¡Listo, aprendí mucho!</button>`);
 }
 function abrirInfo(card){
   const ya=card.classList.contains('abierta');
@@ -723,6 +723,6 @@ JUEGOS.audio_tiempo = z => {
         <div class="num">${t.em}</div>
         <div><strong style="font-size:1.3em;color:var(--poncho)">${t.a}</strong><br>${t.t}</div>
       </button>`).join('')}</div>
-      <button class="btn-grande" onclick="abrirCiclo('${App.ciclo}')">✅ ¡Listo!</button>`);
+      <button class="btn-grande" onclick="finJuego()">✅ ¡Listo!</button>`);
   window._lt=i=>{ sonClick(); decirSiempre('En '+TIMELINE[i].a+', '+TIMELINE[i].t); };
 };
