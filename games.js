@@ -418,7 +418,7 @@ JUEGOS.cruci = z => {
     const nro=document.createElement('div'); nro.className='nro'; nro.textContent=f.n; fila.appendChild(nro);
     const celdas=document.createElement('div'); celdas.className='celdas-cruci';
     const pad=maxSpine-f.spine;
-    for(let p=0;p<pad;p++){ const sp=document.createElement('div'); sp.style.width='40px'; celdas.appendChild(sp); }
+    for(let p=0;p<pad;p++){ const sp=document.createElement('div'); sp.className='cruci-pad'; celdas.appendChild(sp); }
     for(let i=0;i<f.w.length;i++){
       const inp=document.createElement('input'); inp.className='cb'; inp.maxLength=1; inp.dataset.f=fi; inp.dataset.i=i;
       if(i===f.spine){ inp.value=espina[f.n-1]; inp.readOnly=true; inp.classList.add('spine'); }

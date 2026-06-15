@@ -76,6 +76,8 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   background:linear-gradient(180deg,#2A6D9E,#235E8C);
   display:flex;flex-wrap:wrap;gap:9px;justify-content:center;align-items:center;
   padding:11px 16px;
+  padding-left:max(16px,env(safe-area-inset-left));
+  padding-right:max(16px,env(safe-area-inset-right));
   box-shadow:var(--sh-bar);
   border-bottom:3px solid rgba(255,255,255,.18);
 }
@@ -414,9 +416,10 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .fila-cruci .pista{flex:1;min-width:220px;font-weight:700;color:var(--texto-2);font-size:.96em}
 .fila-cruci .nro{width:34px;height:34px;border-radius:50%;background:var(--poncho);color:#fff;font-weight:900;
   display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 3px 0 var(--poncho-osc)}
-.celdas-cruci{display:flex;gap:5px}
-.cb{width:42px;height:42px;border:2.5px solid var(--celeste);border-radius:9px;text-align:center;
-  font-family:var(--fuente-tit);font-weight:700;font-size:1.35rem;color:var(--texto);text-transform:uppercase;background:#fff}
+.celdas-cruci{display:flex;gap:clamp(3px,1vw,5px)}
+.cruci-pad{flex:0 0 auto;width:clamp(30px,7.4vw,42px)}
+.cb{width:clamp(30px,7.4vw,42px);height:clamp(30px,7.4vw,42px);border:2.5px solid var(--celeste);border-radius:9px;text-align:center;
+  font-family:var(--fuente-tit);font-weight:700;font-size:clamp(1.05rem,4vw,1.35rem);color:var(--texto);text-transform:uppercase;background:#fff}
 .cb:focus{outline:3px solid var(--sol);border-color:var(--sol)}
 .cb.spine{background:linear-gradient(160deg,#F8CB63,var(--sol));border-color:var(--sol-oscuro);box-shadow:0 3px 0 var(--sol-oscuro)}
 .cb.ok{background:var(--verde);color:#fff;border-color:var(--verde-osc)}
@@ -603,6 +606,10 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
    ===================================================================== */
 body.texto-grande{--escala:1.3}
 
+/* Fondo blanco (botón ⬜): papel cálido -> blanco limpio */
+body.fondo-blanco{background:#fff;background-image:none}
+body.fondo-blanco .hero-bg{background:linear-gradient(180deg,#BFE0F7 0%, #DCEFFB 48%, #fff 100%)}
+
 /* Alto contraste: oscuro, alto contraste, foco amarillo */
 body.contraste{
   --crema:#000;--crema2:#141414;--texto:#fff;--texto-2:#FFE36B;--tierra:#FFE000;--linea:#FFD400;
@@ -653,12 +660,22 @@ body.txt-minus, body.txt-minus input, body.txt-minus textarea{text-transform:low
 }
 @media(max-width:640px){
   .opciones-vf,.opciones-mc,.ig-builder,.tablero-unir{grid-template-columns:1fr}
-  .barra-acc{gap:7px;padding:9px 10px}
+  .barra-acc{gap:8px;padding:9px 10px;justify-content:flex-start;
+    flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .barra-acc::-webkit-scrollbar{display:none}
+  .barra-acc .marca{margin-right:8px;flex:0 0 auto}
   .barra-acc .marca span.txt{display:none}
+  .btn-acc{flex:0 0 auto}
   .btn-acc span.lbl{display:none}
-  .btn-acc{padding:10px 12px}
+  .btn-acc{padding:11px 13px}
   .ficha,.casilla{width:50px;height:58px;font-size:1.7rem}
-  .cb{width:34px;height:34px;font-size:1.05rem}
+  .flechas button{width:48px;height:42px;font-size:1.2em}
+  .escena{padding:20px 16px}
+  .escena-fila{gap:14px}
+  .guia-fig{width:130px}
+  .guia-foto-marco{width:118px}
+  .globo{padding:15px 16px}
+  .globo:before,.globo:after{display:none}
   .banner-historia .bh-fig{display:none}
 }
 @media(max-width:380px){
