@@ -285,27 +285,29 @@ const TIMELINE = [
 function renderInicio(){
   $('#vista-inicio').innerHTML = `
   <section class="hero">
-    <div class="cielo"></div>
-    <div class="nube" style="width:120px;height:38px;top:30px;left:8%"></div>
-    <div class="nube" style="width:90px;height:30px;top:70px;right:12%"></div>
-    <div class="cofre-marca" data-leer="Una creación de Cofre Didáctico">
-      <span class="pre">Una creación de</span>
-      <img src="logo-cofre.png" alt="Cofre Didáctico" class="cofre-logo">
-    </div>
-    <div class="banderin" data-leer="17 de Junio. Paso a la inmortalidad de Martín Miguel de Güemes.">★ 17 DE JUNIO ★</div>
-    <h1 data-leer="Martín Miguel de Güemes">MARTÍN MIGUEL<br><span>DE GÜEMES</span></h1>
-    <p class="sub">Héroe de la Independencia Argentina · El defensor del Norte</p>
-    <div class="hero-retrato">
-      <div class="hero-foto-marco">
-        <img src="guemes-portada.png" alt="Retrato de Martín Miguel de Güemes" class="hero-foto">
+    <div class="hero-bg" aria-hidden="true"></div>
+    <div class="hero-rays" aria-hidden="true"></div>
+    <div class="wrap hero-inner">
+      <div class="hero-txt">
+        <div class="cofre-chip" data-leer="Una creación de Cofre Didáctico">
+          <img src="logo-cofre.png" alt="Cofre Didáctico">
+          <span>Una creación de<b>Cofre Didáctico</b></span>
+        </div>
+        <div class="banderin" data-leer="17 de Junio. Paso a la inmortalidad de Martín Miguel de Güemes.">★ 17 DE JUNIO · Paso a la inmortalidad</div>
+        <h1 data-leer="Martín Miguel de Güemes">MARTÍN MIGUEL<span>DE GÜEMES</span></h1>
+        <p class="sub">Héroe de la Independencia Argentina · El defensor del Norte</p>
+        <p class="frase" data-leer="Defender la patria también es cuidar nuestra libertad.">«Defender la patria también es cuidar nuestra libertad»</p>
+        <button class="hero-cta" onclick="window.scrollTo({top:(document.getElementById('secciones').offsetTop-72),behavior:'smooth'})" data-leer="Elegí por dónde empezar">🎮 Elegí por dónde empezar</button>
       </div>
-      <span class="hero-placa">Martín Miguel de Güemes · 1785 – 1821</span>
+      <div class="hero-fig">
+        <img src="guemes-portada.png" alt="Retrato de Martín Miguel de Güemes" class="hero-foto">
+        <span class="hero-placa">📍 Salta · 1785 – 1821</span>
+      </div>
     </div>
-    <p class="frase" data-leer="Defender la patria también es cuidar nuestra libertad.">🌟 «Defender la patria también es cuidar nuestra libertad» 🌟</p>
   </section>
 
   <div class="wrap">
-    <h2 class="titulo-seccion">🎮 ¡Elegí tu aventura!</h2>
+    <h2 class="titulo-seccion" id="secciones">🎮 ¡Elegí tu aventura!</h2>
     <p class="bajada">Una plataforma para aprender jugando sobre Güemes, los Gauchos Infernales y la Guerra Gaucha. Elegí por dónde empezar:</p>
 
     <button class="banner-historia" onclick="abrirHistoria()" data-leer="Modo Historia. Una aventura narrada por Güemes y su hermana Macacha, con misiones de juego.">
@@ -314,7 +316,7 @@ function renderInicio(){
         <strong>Modo Historia: La aventura de Güemes</strong>
         <small>Recorré su vida con Macacha y Güemes como guías. ¡6 misiones para completar! ▶</small>
       </span>
-      <span class="bh-fig">${svgMacacha()}</span>
+      <span class="bh-fig"><img src="macacha.png" alt="Macacha Güemes"></span>
     </button>
 
     <div class="grid-cards">

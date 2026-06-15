@@ -348,7 +348,7 @@ function sopaDeLetras(zona, titulo, palabras){
     const d=document.createElement('div'); d.className='celda'; d.textContent=l; d.dataset.r=r; d.dataset.c=col;
     sg.appendChild(d);
   }));
-  let sel=[], dragging=false, encontradas=0;
+  let sel=[], dragging=false, encontradas=0; const halladas=new Set();
   const cellAt=(x,y)=>{ const el=document.elementFromPoint(x,y); return el&&el.classList.contains('celda')?el:null; };
   function start(el){ if(!el)return; dragging=true; sel=[el]; el.classList.add('sel'); }
   function move(el){ if(!dragging||!el||sel.includes(el))return;
@@ -359,8 +359,9 @@ function sopaDeLetras(zona, titulo, palabras){
     const palabra=sel.map(e=>e.textContent).join('');
     const rev=[...sel].reverse().map(e=>e.textContent).join('');
     let hit=null;
-    for(const w of objetivo){ if((palabra===w||rev===w) && !sel[0].dataset.done){ hit=w; break; } }
+    for(const w of objetivo){ if((palabra===w||rev===w) && !halladas.has(w)){ hit=w; break; } }
     if(hit){
+      halladas.add(hit);
       sel.forEach(e=>{e.classList.remove('sel');e.classList.add('found');});
       $(`.palabra-buscar[data-w="${hit}"]`,c).classList.add('tachada');
       sonBien(); encontradas++;
@@ -460,7 +461,8 @@ JUEGOS.pintar = z => {
        <button class="btn-acc" id="borrar">🧽 Limpiar</button>
        <button class="btn-acc" id="descargar">💾 Guardar</button>
      </div>
-     <canvas id="lienzo" class="paint-canvas" width="520" height="420"></canvas>`);
+     <canvas id="lienzo" class="paint-canvas" width="520" height="420"></canvas>
+     <button class="btn-grande" id="pinto-listo">✅ ¡Listo, terminé mi dibujo!</button>`);
   const colores=['#C0392B','#6CB6E3','#F6C544','#4FA56B','#8B5E3C','#2E6FA6','#E29B27','#F4D6B0','#3a2a1a','#FFFFFF'];
   $('#tools',c).innerHTML=colores.map((col,i)=>`<button class="swatch ${i===0?'sel':''}" style="background:${col}" data-col="${col}" aria-label="Color ${col}"></button>`).join('');
   const cv=$('#lienzo',c), ctx=cv.getContext('2d',{willReadFrequently:true});
@@ -493,6 +495,7 @@ JUEGOS.pintar = z => {
   $('#modo-pincel',c).onclick=()=>{modo='pincel';sonClick();};
   $('#borrar',c).onclick=()=>{ ctx.fillStyle='#fff'; ctx.fillRect(0,0,cv.width,cv.height); dibujarLineas(); sonClick(); };
   $('#descargar',c).onclick=()=>{ const a=document.createElement('a'); a.download='mi-guemes.png'; a.href=cv.toDataURL(); a.click(); };
+  $('#pinto-listo',c).onclick=()=>medallaFinal(z,'¡Pintaste tu Güemes! Quedó hermoso. 🎨⭐');
   function pos(e){ const r=cv.getBoundingClientRect(); const t=e.touches?e.touches[0]:e;
     return {x:Math.floor((t.clientX-r.left)*cv.width/r.width), y:Math.floor((t.clientY-r.top)*cv.height/r.height)}; }
   function hexRGB(h){ if(h==='#FFFFFF')return[255,255,255]; const n=parseInt(h.slice(1),16); return [n>>16,(n>>8)&255,n&255]; }
