@@ -49,14 +49,22 @@ JUEGOS.info_sc = z => infografia(z, INFO_SC, '📖 Güemes en detalle',
    MOTOR DE QUIZ  (Verdadero/Falso y Opción múltiple)
    ===================================================================== */
 function quizVF(zona, titulo, consigna, preguntas, finalMsg){
-  let idx=0, aciertos=0;
+  const dif = App.dificultad || 'normal';
+  let lista = preguntas.slice();
+  if(dif!=='facil') lista = baraja(lista);
+  let idx=0, aciertos=0, timer=null;
   const c = marco(zona, titulo, consigna, `<div id="q"></div>`);
   const q = $('#q',c);
+  function pararTimer(){ if(timer){ clearInterval(timer); timer=null; } }
   function pinta(){
-    if(idx>=preguntas.length){ return medallaFinal(zona, finalMsg.replace('{n}',aciertos).replace('{t}',preguntas.length)); }
-    const p=preguntas[idx];
+    pararTimer();
+    if(idx>=lista.length){ return medallaFinal(zona, finalMsg.replace('{n}',aciertos).replace('{t}',lista.length)); }
+    const p=lista[idx];
     q.innerHTML = `
-      <div class="chip" style="margin:0 auto 14px;width:max-content">Pregunta ${idx+1} de ${preguntas.length}</div>
+      <div class="quiz-top">
+        <div class="chip">Pregunta ${idx+1} de ${lista.length}</div>
+        ${dif==='desafio'?'<div class="timer-barra"><div class="timer-fill" id="tf"></div></div>':''}
+      </div>
       <div class="pregunta-card" data-leer="${p.t.replace(/"/g,'')}">${p.t}</div>
       <div class="opciones-vf">
         <button class="btn-vf v" onclick="window._resVF(true,this)"><span class="em">👍</span>VERDADERO</button>
@@ -65,17 +73,36 @@ function quizVF(zona, titulo, consigna, preguntas, finalMsg){
       <div class="feedback" id="fb"></div>
       <div class="explica" id="ex">${p.exp||''}</div>`;
     if(App.lecturaOn) decir(p.t);
+    if(dif==='desafio') arrancarTimer();
+  }
+  function arrancarTimer(){
+    let t=12; const fill=$('#tf',q);
+    timer=setInterval(()=>{
+      t-=0.1; if(fill){ fill.style.width=Math.max(0,t/12*100)+'%'; fill.classList.toggle('alerta',t<=4); }
+      if(t<=0){ pararTimer(); window._resVF(null,null); }
+    },100);
+    window.__quizTimer=timer;
   }
   window._resVF=(resp,btn)=>{
-    const p=preguntas[idx];
-    $$('.btn-vf',q).forEach(b=>b.disabled=true);
+    pararTimer();
+    const p=lista[idx];
     const fb=$('#fb',q), ex=$('#ex',q);
-    if(resp===p.r){ aciertos++; sonBien(); confeti(30); fb.textContent='¡Muy bien! 🎉'; fb.className='feedback bien'; }
+    const correcto = resp===p.r;
+    $$('.btn-vf',q).forEach(b=>b.disabled=true);
+    if(correcto){ aciertos++; sonBien(); confeti(30); fb.textContent='¡Muy bien! 🎉'; fb.className='feedback bien'; }
+    else if(resp===null){ sonMal(); fb.textContent='¡Se acabó el tiempo! ⏰'; fb.className='feedback mal'; }
     else { sonMal(); fb.textContent='¡Casi! Prestá atención 💡'; fb.className='feedback mal'; }
-    if(p.exp){ ex.style.display='block'; if(App.lecturaOn) decir((resp===p.r?'Correcto. ':'No. ')+p.exp); }
-    else if(App.lecturaOn) decir(resp===p.r?'¡Muy bien!':'Casi, prestá atención.');
+    // FÁCIL: si erra (no por tiempo), puede intentar otra vez
+    if(dif==='facil' && resp!==null && !correcto){
+      if(p.exp){ ex.style.display='block'; }
+      $$('.btn-vf',q).forEach(b=>b.disabled=false);
+      if(App.lecturaOn) decir('Probá de nuevo. '+(p.exp||''));
+      return;
+    }
+    if(p.exp && dif!=='desafio'){ ex.style.display='block'; if(App.lecturaOn) decir((correcto?'Correcto. ':'No. ')+p.exp); }
+    else if(App.lecturaOn) decir(correcto?'¡Muy bien!':'Casi, prestá atención.');
     const next=document.createElement('button');
-    next.className='btn-grande'; next.textContent = idx+1<preguntas.length?'Siguiente ➡️':'Ver resultado 🏅';
+    next.className='btn-grande'; next.textContent = idx+1<lista.length?'Siguiente ➡️':'Ver resultado 🏅';
     next.onclick=()=>{ idx++; pinta(); };
     q.appendChild(next);
   };
@@ -100,35 +127,58 @@ JUEGOS.vf_sc = z => quizVF(z,'⚖️ Verdadero o Falso','Pensá bien cada afirma
 
 /* Opción múltiple genérico */
 function quizMC(zona, titulo, consigna, preguntas, finalMsg){
-  let idx=0, aciertos=0;
+  const dif = App.dificultad || 'normal';
+  let lista = preguntas.slice();
+  if(dif!=='facil') lista = baraja(lista);
+  let idx=0, aciertos=0, timer=null;
   const c=marco(zona,titulo,consigna,`<div id="q"></div>`);
   const q=$('#q',c);
+  function pararTimer(){ if(timer){ clearInterval(timer); timer=null; } }
   function pinta(){
-    if(idx>=preguntas.length){ return medallaFinal(zona, finalMsg.replace('{n}',aciertos).replace('{t}',preguntas.length)); }
-    const p=preguntas[idx];
+    pararTimer();
+    if(idx>=lista.length){ return medallaFinal(zona, finalMsg.replace('{n}',aciertos).replace('{t}',lista.length)); }
+    const p=lista[idx];
     const ops=baraja(p.ops);
     q.innerHTML=`
-      <div class="chip" style="margin:0 auto 14px;width:max-content">Desafío ${idx+1} de ${preguntas.length}</div>
+      <div class="quiz-top">
+        <div class="chip">Desafío ${idx+1} de ${lista.length}</div>
+        ${dif==='desafio'?'<div class="timer-barra"><div class="timer-fill" id="tf"></div></div>':''}
+      </div>
       <div class="pregunta-card" data-leer="${p.t.replace(/"/g,'')}">${p.t}</div>
       <div class="opciones-mc">${ops.map(o=>`<button class="btn-mc" onclick='window._resMC(this,${JSON.stringify(o===p.r)})'>${o}</button>`).join('')}</div>
       <div class="feedback" id="fb"></div>
       <div class="explica" id="ex">${p.exp||''}</div>`;
     if(App.lecturaOn) decir(p.t+'. Opciones: '+ops.join(', '));
+    if(dif==='desafio') arrancarTimer();
+  }
+  function arrancarTimer(){
+    let t=15; const fill=$('#tf',q);
+    timer=setInterval(()=>{
+      t-=0.1; if(fill){ fill.style.width=Math.max(0,t/15*100)+'%'; fill.classList.toggle('alerta',t<=5); }
+      if(t<=0){ pararTimer(); window._resMC(null,false); }
+    },100);
+    window.__quizTimer=timer;
   }
   window._resMC=(btn,ok)=>{
-    $$('.btn-mc',q).forEach(b=>{ b.disabled=true;
-      if(b===btn) b.classList.add(ok?'correcta':'incorrecta');
-    });
-    const p=preguntas[idx], fb=$('#fb',q), ex=$('#ex',q);
+    pararTimer();
+    const p=lista[idx], fb=$('#fb',q), ex=$('#ex',q);
+    // FÁCIL: si erra (clic), dejar reintentar sin bloquear el resto
+    if(dif==='facil' && btn && !ok){
+      sonMal(); btn.classList.add('incorrecta'); btn.disabled=true;
+      fb.textContent='Esa no es 💡 ¡Probá otra!'; fb.className='feedback mal';
+      if(p.exp){ ex.style.display='block'; }
+      return;
+    }
+    $$('.btn-mc',q).forEach(b=>{ b.disabled=true; });
     if(ok){ aciertos++; sonBien(); confeti(30); fb.textContent='¡Correcto! 🌟'; fb.className='feedback bien';
-      btn.classList.add('correcta'); }
-    else { sonMal(); fb.textContent='No era esa 💡'; fb.className='feedback mal';
-      // resaltar correcta
+      if(btn) btn.classList.add('correcta'); }
+    else { sonMal(); fb.textContent = btn ? 'No era esa 💡' : '¡Se acabó el tiempo! ⏰'; fb.className='feedback mal';
+      if(btn) btn.classList.add('incorrecta');
       $$('.btn-mc',q).forEach(b=>{ if(b.textContent===p.r) b.classList.add('correcta'); });
     }
-    if(p.exp){ ex.style.display='block'; if(App.lecturaOn) decir((ok?'Correcto. ':'')+p.exp); }
+    if(p.exp && dif!=='desafio'){ ex.style.display='block'; if(App.lecturaOn) decir((ok?'Correcto. ':'')+p.exp); }
     const next=document.createElement('button'); next.className='btn-grande';
-    next.textContent=idx+1<preguntas.length?'Siguiente ➡️':'Ver resultado 🏅';
+    next.textContent=idx+1<lista.length?'Siguiente ➡️':'Ver resultado 🏅';
     next.onclick=()=>{ idx++; pinta(); };
     q.appendChild(next);
   };

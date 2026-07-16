@@ -5,7 +5,8 @@
 
 /* ---------- Estado global ---------- */
 const App = { ciclo:'pc', estrellas:0, lecturaOn:false, enHistoria:false, histPaso:0, musicaOn:false, letra:'normal',
-              completados:new Set(), medallas:new Set(), nombre:'', juegoActual:'', historiaCompleta:false };
+              completados:new Set(), medallas:new Set(), nombre:'', juegoActual:'', historiaCompleta:false,
+              dificultad:'normal', prefs:{} };
 
 /* ---------- Guardado de progreso (funciona en GitHub Pages / archivo local) ---------- */
 const STORE_KEY = 'cofre_guemes_v1';
@@ -17,6 +18,8 @@ function cargarEstado(){
     App.medallas = new Set(s.medallas || []);
     App.nombre = s.nombre || '';
     App.historiaCompleta = !!s.historiaCompleta;
+    App.dificultad = s.dificultad || 'normal';
+    App.prefs = s.prefs || {};
   }catch(e){ /* almacenamiento no disponible: seguimos sin guardar */ }
 }
 function guardarEstado(){
@@ -26,7 +29,9 @@ function guardarEstado(){
       completados: [...App.completados],
       medallas: [...App.medallas],
       nombre: App.nombre,
-      historiaCompleta: App.historiaCompleta
+      historiaCompleta: App.historiaCompleta,
+      dificultad: App.dificultad,
+      prefs: App.prefs
     }));
   }catch(e){}
 }
@@ -34,6 +39,73 @@ function reiniciarProgreso(){
   App.estrellas=0; App.completados=new Set(); App.medallas=new Set(); App.historiaCompleta=false;
   guardarEstado();
 }
+function confirmarReinicio(){
+  sonClick();
+  const ok = window.confirm('¿Querés reiniciar el progreso? Se borran las estrellas, medallas y juegos completados de este dispositivo. (Las preferencias de pantalla se mantienen.)');
+  if(ok){ reiniciarProgreso(); decirSiempre('Progreso reiniciado. ¡A empezar de nuevo!'); irInicio(); }
+}
+
+/* ---------- Preferencias de pantalla (se recuerdan entre visitas) ---------- */
+function pintarBotonLetra(){
+  let ic='Aa', lbl='Letra';
+  if(App.letra==='mayus'){ ic='AA'; lbl='MAYÚS'; }
+  else if(App.letra==='minus'){ ic='aa'; lbl='minús'; }
+  const ei=$('#b-letra-ic'), el=$('#b-letra-lbl'), b=$('#b-letra');
+  if(ei) ei.textContent=ic;
+  if(el) el.textContent=lbl;
+  if(b){ b.classList.toggle('activo',App.letra!=='normal'); b.setAttribute('aria-pressed',App.letra!=='normal'); }
+}
+function aplicarPrefs(){
+  const p = App.prefs || {};
+  const mapa = {'texto-grande':'b-texto','contraste':'b-contraste','calmo':'b-calmo','nocturno':'b-noche'};
+  Object.entries(mapa).forEach(([clase,btnId])=>{
+    if(p[clase]){
+      document.body.classList.add(clase);
+      const b=$('#'+btnId); if(b){ b.classList.add('activo'); b.setAttribute('aria-pressed','true'); }
+    }
+  });
+  if(p.lectura){
+    App.lecturaOn=true;
+    const b=$('#b-leer'); if(b){ b.classList.add('activo'); b.setAttribute('aria-pressed','true'); }
+  }
+  if(p.letra && p.letra!=='normal'){
+    App.letra=p.letra;
+    document.body.classList.toggle('txt-mayus',p.letra==='mayus');
+    document.body.classList.toggle('txt-minus',p.letra==='minus');
+    pintarBotonLetra();
+  }
+}
+function avisoProgreso(){
+  if(App.completados.size===0 && App.estrellas===0) return;
+  let t=$('#medalla-toast');
+  if(!t){ t=document.createElement('div'); t.id='medalla-toast'; document.body.appendChild(t); }
+  t.innerHTML = `<span class="mt-em">👋</span>
+    <span class="mt-txt"><strong>¡Hola de nuevo!</strong><br>Recuperamos tu progreso: ${App.completados.size} juego(s) y ⭐ ${App.estrellas}.</span>`;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 3800);
+}
+
+/* ---------- Pantalla completa ---------- */
+function toggleFullscreen(){
+  sonClick();
+  const el=document.documentElement;
+  try{
+    if(!document.fullscreenElement && !document.webkitFullscreenElement){
+      (el.requestFullscreen||el.webkitRequestFullscreen||(()=>{})).call(el);
+    }else{
+      (document.exitFullscreen||document.webkitExitFullscreen||(()=>{})).call(document);
+    }
+  }catch(e){}
+}
+function sincronizarFull(){
+  const on = !!(document.fullscreenElement||document.webkitFullscreenElement);
+  const b=$('#b-full'); if(!b) return;
+  b.classList.toggle('activo',on); b.setAttribute('aria-pressed',on);
+  const ic=b.querySelector('.ic'); if(ic) ic.textContent = on ? '✕' : '⛶';
+  const lbl=b.querySelector('.lbl'); if(lbl) lbl.textContent = on ? 'Salir' : 'Pantalla completa';
+}
+document.addEventListener('fullscreenchange',sincronizarFull);
+document.addEventListener('webkitfullscreenchange',sincronizarFull);
 
 /* ---------- Utilidades ---------- */
 const $ = (s,c=document)=>c.querySelector(s);
@@ -42,6 +114,7 @@ const baraja = a => a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(v=>v[
 
 /* ---------- Router ---------- */
 function ir(vista){
+  if(window.__quizTimer){ clearInterval(window.__quizTimer); window.__quizTimer=null; }
   $$('.vista').forEach(v=>v.classList.remove('activa'));
   $('#vista-'+vista).classList.add('activa');
   window.scrollTo({top:0,behavior:'instant'});
@@ -54,23 +127,23 @@ function ir(vista){
 function toggleClase(clase,btnId){
   const on = document.body.classList.toggle(clase);
   const b = $('#'+btnId); b.classList.toggle('activo',on); b.setAttribute('aria-pressed',on);
+  App.prefs[clase]=on; guardarEstado();
 }
 function toggleLetra(){
   const orden=['normal','mayus','minus'];
   App.letra = orden[(orden.indexOf(App.letra)+1)%3];
   document.body.classList.remove('txt-mayus','txt-minus');
-  let ic='Aa', lbl='Letra', say='Letra normal';
-  if(App.letra==='mayus'){ document.body.classList.add('txt-mayus'); ic='AA'; lbl='MAYÚS'; say='Imprenta mayúscula'; }
-  else if(App.letra==='minus'){ document.body.classList.add('txt-minus'); ic='aa'; lbl='minús'; say='Imprenta minúscula'; }
-  const ei=$('#b-letra-ic'), el=$('#b-letra-lbl'), b=$('#b-letra');
-  if(ei) ei.textContent=ic;
-  if(el) el.textContent=lbl;
-  if(b){ b.classList.toggle('activo',App.letra!=='normal'); b.setAttribute('aria-pressed',App.letra!=='normal'); }
+  let say='Letra normal';
+  if(App.letra==='mayus'){ document.body.classList.add('txt-mayus'); say='Imprenta mayúscula'; }
+  else if(App.letra==='minus'){ document.body.classList.add('txt-minus'); say='Imprenta minúscula'; }
+  pintarBotonLetra();
+  App.prefs.letra=App.letra; guardarEstado();
   sonClick(); decir(say);
 }
 function toggleLectura(){
   App.lecturaOn = !App.lecturaOn;
   const b=$('#b-leer'); b.classList.toggle('activo',App.lecturaOn); b.setAttribute('aria-pressed',App.lecturaOn);
+  App.prefs.lectura=App.lecturaOn; guardarEstado();
   if(App.lecturaOn) decir('Lectura en voz alta activada. Tocá los textos para escucharlos.');
   else cancelarVoz();
 }
@@ -384,6 +457,7 @@ function panelProgreso(){
     <div class="pp-botones">
       <button class="btn-grande azul" onclick="renderMedallas()">🏅 Mis medallas</button>
       <button class="btn-grande" onclick="renderDiploma()">📜 Mi diploma</button>
+      <button class="btn-volver" onclick="confirmarReinicio()" data-leer="Reiniciar mi progreso" title="Borrar estrellas, medallas y juegos completados">♻️ Reiniciar</button>
     </div>
   </div>`;
 }
@@ -509,18 +583,65 @@ const MENUS = {
     ]},
 };
 
+const DIF_INFO = {
+  facil:   {em:'🌱', nom:'Fácil',   hint:'En los quiz podés volver a intentar y siempre te explican la respuesta. Sin apuro.'},
+  normal:  {em:'⭐', nom:'Normal',  hint:'Una oportunidad por pregunta, con su explicación. El modo de siempre.'},
+  desafio: {em:'🔥', nom:'Desafío', hint:'Preguntas mezcladas y con tiempo. ¡A pensar rápido!'},
+};
+function selectorDificultad(){
+  const d=App.dificultad||'normal';
+  const botones=Object.entries(DIF_INFO).map(([k,v])=>
+    `<button class="dif-btn ${k===d?'activo':''}" onclick="setDificultad('${k}')" aria-pressed="${k===d}" data-leer="Nivel ${v.nom}">${v.em} ${v.nom}</button>`
+  ).join('');
+  return `<div class="dif-selector" role="group" aria-label="Elegí el nivel de dificultad">
+      <span class="dif-lbl">🎚️ Nivel:</span>${botones}
+    </div>
+    <p class="dif-hint" data-leer="${DIF_INFO[d].hint}">${DIF_INFO[d].hint}</p>`;
+}
+function setDificultad(d){
+  if(!DIF_INFO[d]) return;
+  App.dificultad=d; guardarEstado(); sonClick();
+  abrirCiclo(App.ciclo);
+  if(App.lecturaOn) decir('Nivel '+DIF_INFO[d].nom+'. '+DIF_INFO[d].hint);
+}
+
+function medallasMini(){
+  return `<div class="medallas-mini" role="list" aria-label="Medallas ganadas">${MEDALLAS.map(m=>{
+    const ok=App.medallas.has(m.id);
+    return `<span class="mm ${ok?'':'bloq'}" title="${m.nom}${ok?' · ¡Ganada!':' · Bloqueada'}" role="listitem">${ok?m.em:'🔒'}</span>`;
+  }).join('')}</div>`;
+}
+function toggleUnlockCiclo(ciclo){
+  App.prefs['unlock_'+ciclo] = !App.prefs['unlock_'+ciclo];
+  guardarEstado(); sonClick(); abrirCiclo(ciclo);
+}
 function abrirCiclo(ciclo){
   App.ciclo=ciclo; App.enHistoria=false; sonClick();
   const m=MENUS[ciclo];
   // sugerencias de accesibilidad automáticas
   if(ciclo==='av' && !App.lecturaOn) toggleLectura();
-  const tiles = m.juegos.map(j=>`
-    <button class="tile" onclick="abrirJuego('${j.id}')" data-leer="${j.t}. ${j.s}">
-      <span class="ic">${j.ic}</span>
+  const desbloqueoTotal = !!App.prefs['unlock_'+ciclo];
+  let prevHecho = true;
+  const tiles = m.juegos.map((j,i)=>{
+    const hecho = App.completados.has(j.id);
+    const desbloqueado = i===0 || prevHecho || desbloqueoTotal;
+    const locked = !desbloqueado;
+    prevHecho = hecho;
+    return `
+    <button class="tile ${hecho?'hecho':''} ${locked?'locked':''}" ${locked?'disabled aria-disabled="true"':''}
+      onclick="${locked?'':`abrirJuego('${j.id}')`}"
+      data-leer="${locked?'Nivel '+(i+1)+' bloqueado. Complet\u00e1 el nivel anterior para desbloquearlo.':'Nivel '+(i+1)+'. '+j.t+'. '+j.s}">
+      <span class="tile-num">${i+1}</span>
+      ${hecho?'<span class="check">✓</span>':''}
+      <span class="ic">${locked?'🔒':j.ic}</span>
       <h4>${j.t}</h4>
-      <small>${j.s}</small>
-      <span class="pill">${j.tag}</span>
-    </button>`).join('');
+      <small>${locked?'Completá el nivel anterior':j.s}</small>
+      <span class="pill">${hecho?'¡Hecho! ⭐':j.tag}</span>
+    </button>`;
+  }).join('');
+  const totalCiclo = m.juegos.length;
+  const compCiclo = m.juegos.filter(j=>App.completados.has(j.id)).length;
+  const pctCiclo = totalCiclo ? Math.round(compCiclo/totalCiclo*100) : 0;
   $('#vista-menu').innerHTML = `
   <div class="wrap">
     <div style="text-align:center;margin:6px 0 18px">
@@ -530,8 +651,15 @@ function abrirCiclo(ciclo){
       <span class="lbl">${m.titulo}</span>
       <span class="chip estrella">⭐ <span id="estrellas-cont">${App.estrellas}</span></span>
     </div>
+    ${medallasMini()}
+    <div class="ciclo-progreso">
+      <div class="barra"><div class="fill" style="width:${pctCiclo}%"></div></div>
+      <small>${compCiclo} de ${totalCiclo} niveles completados en esta sección</small>
+    </div>
+    ${selectorDificultad()}
     <p class="bajada" data-leer="${m.desc.replace(/"/g,'')}">${m.desc}</p>
     <div class="grid-juegos">${tiles}</div>
+    <button class="desbloq-link" onclick="toggleUnlockCiclo('${ciclo}')">${desbloqueoTotal?'🔒 Volver a jugar en orden':'🔓 Soy docente: desbloquear todos los niveles'}</button>
   </div>`;
   ir('menu');
   if(App.lecturaOn) decir(m.titulo+'. '+m.desc);
@@ -762,7 +890,9 @@ function totalJuegos(){ return (typeof JUEGOS!=='undefined') ? Object.keys(JUEGO
 
 function boot(){
   cargarEstado();
+  aplicarPrefs();
   renderInicio();
+  setTimeout(avisoProgreso, 700);
 }
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot);
 else boot();
